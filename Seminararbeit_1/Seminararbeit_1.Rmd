@@ -11,17 +11,21 @@ graphics: true
 documentclass: article
 output: 
   pdf_document:
-    toc: TRUE # table content (Inhaltverzeichnis)
-    latex_engine: pdflatex
-    toc_depth: 2 # wie tief Inhaltverzeichnis, Hierarchie
-    number_sections: true
-    keep_tex: true
+    keep_tex: yes
+    number_sections: yes
+    toc: yes
+    toc_depth: 2
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 #Part I (3 Points)  
+
+```{r, include=FALSE, echo=FALSE}
+rm(list = ls())     # remove all previous variables
+```
+
 1. *What are the atomic vector types in R?*
    *Explain which value they can take and give an example!*
 2. *What is the difference between generic and atomic vectors?*
@@ -45,15 +49,15 @@ raw                | raw bytes (as pairs of hex digits)  | as.raw(255) = ff
 2. Generic vectors (lists) are also linear vectors (one-dimensional), 
 but can contain objects of different types. Example of a list: 
 ```{r}
-            x <- list(1:10,"a", c(TRUE,FALSE), c(1 + 2i,3i))
+x <- list(1:10,"a", c(TRUE,FALSE), c(1 + 2i,3i))
 ```
 
 3. A data frame is a list of generic vectors of the same length and therefore has a two dimensional structure based on rows and columns. Example of a data frame:
 ```{r}
-            df <- data.frame(Name = c("M","X","D"), 
-                             Country = c('B','V','R'), 
-                             hasGlasses = c(FALSE,TRUE,TRUE))
-            df
+df <- data.frame(Name = c("M","X","D"), 
+                 Country = c('B','V','R'), 
+                 hasGlasses = c(FALSE,TRUE,TRUE))
+df
 ```
 Data frame is a list of lists with the same length. Each list from a data frame 
 represents a column or a row of a data frame. But a list can not be a data frame 
@@ -62,11 +66,11 @@ That's why we have the statement.
 
 #Part II (7 Points) 
 *Explain each line of the following code. In addition, discuss what the output of identical(a, b) will be. Check the help files for the functions set.seed, identical, rnorm and cumsum.*
-```{r include=FALSE}
+```{r}
   # ensure that results from a random generator are reproducible
 set.seed(1)
   # generate a vector of normally distributed random numbers
-largeVector <- rnorm(100, mean = 5, sd = 10) 
+largeVector <- rnorm(1e7, mean = 5, sd = 10) 
   # define a and b
 a <- cumsum(largeVector)[1:100] 
 b <- cumsum(largeVector[1:100])
@@ -104,7 +108,10 @@ system.time(cumsum(largeVector[1:100]))
 ```
 
 \newpage
+
 #Part III (20 Points)
+
+
 *Conduct a regression analysis and report your findings. The report should contain the following sections:*
 
 * *data import* 
@@ -117,24 +124,24 @@ system.time(cumsum(largeVector[1:100]))
 **Answer:**  
 **Logistic_Regression_Titanic:**  
 
-**1. Data import**  
-Firstly we need to import the data as well as some neccessary libraries
-```{r}
-load(file = "/Users/XuanSon/Desktop/titanic.Rdata")
+## Data import 
 
+Firstly we need to import the necessary libraries and dataset. 
+```{r loading, message=FALSE, warning=FALSE}
 library(ggplot2)
-# install.packages("gridExtra")
-library(gridExtra)
+library(gridExtra) # install.packages("gridExtra") if needed
+
+load(file = "./datasets/titanic.Rdata")
 ```
   
-**2. Descriptive statistics and data validation**  
+## Descriptive statistics and data validation
 Let's take a look at the data to get a general overview of it
 ```{r}
   # See which variables are given in the data set through a small sample of the dataset
-titanic[1:5,]
+head(titanic,5)
 ```
 
-Let's summarize the given variables 
+Let's summarize the  variables 
 ```{r}
 str(titanic)
 ```
@@ -156,6 +163,14 @@ boat        | Lifeboat                           | factor with 28 levels
 body        | Body Identification Number         | labelled vector
 home.dest   | Home/Destination                   | labelled vector
 
+
+Let's output a descriptive statistic of all variables for an overview of the data
+```{r}
+summary(titanic)
+```
+
+
+
 Since data frame aims to describes the survival status of individual passengers on the Titanic dependent on many different features. Let's take a look at some useful graphics. 
 
 ```{r, fig.width=3,fig.height=1.5}
@@ -167,8 +182,6 @@ titanic$sibsp <- as.numeric(titanic$sibsp)
 titanic$parch <- as.numeric(titanic$parch)
 
 
-
-  # 
 ggplot(titanic, aes(survived, fill = survived)) + geom_bar() + 
     scale_fill_discrete(breaks = c("0", "1"),labels = c("No", "Yes")) + 
     labs(subtitle = "Frequency of survival")
@@ -225,7 +238,11 @@ Some first annotations:
 * The varibale *body* contains about 91% missing values. It is quite a high amount. Probably we would drop this variable out of our model.  
 * The amounts of missing vales of *fare* and *embarked* are very small. Maybe we would just drop the concerned passengers from the data set or replace the missing values by one certain value.  
 
-**3. Identification of relevant regressors**  
+
+
+##3. Identification of relevant regressors
+
+
 Let's clean our data due to unnecessary information: 
 Since some variables do not to contain a lot useful information to our model, we would drop them from our model. These are: *nam, cabin, ticket, boat, body, home.dest*
 ```{r}
@@ -308,7 +325,7 @@ print(paste("Model accuracy is ", accuracy, "%"))
 
 Alternative?:
 
-load(file = "/Users/XuanSon/Desktop/miete.Rdata")
+load(file = "./datasets/miete.Rdata")
 
 miete$bez <- as.integer(miete$bez)
 miete$wohngut <- factor(miete$wohngut)
