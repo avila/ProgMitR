@@ -34,3 +34,9 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# test files
+test_2.txt
+*.txx
+
+# this line was added from avila
