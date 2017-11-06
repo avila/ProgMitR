@@ -11,28 +11,23 @@ graphics: true
 documentclass: article
 output: 
   pdf_document:
-    keep_tex: yes
-    number_sections: yes
-    toc: yes
-    toc_depth: 2
+    toc: TRUE # table content (Inhaltverzeichnis)
+    latex_engine: pdflatex
+    toc_depth: 3 # wie tief Inhaltverzeichnis, Hierarchie
+    number_sections: true
+    keep_tex: true
 ---
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-#Part I (3 Points)  
 
-```{r, include=FALSE, echo=FALSE}
-rm(list = ls())     # remove all previous variables
-```
+\newpage
+# Part I (3 Points)  
 
-1. *What are the atomic vector types in R?*
-   *Explain which value they can take and give an example!*
-2. *What is the difference between generic and atomic vectors?*
-3. *Explain the following statement:* 
-    *A data frame is a list, but not every list is a data frame.*
+## Tasks  
+- *What are the atomic vector types in R? Explain which value they can take and give an example!*  
+- *What is the difference between generic and atomic vectors?*  
+- *Explain the following statement: A data frame is a list, but not every list is a data frame.*  
 
-**Answer:**  
+## Answer 
   
 1. Atomic vectors are linear vectors (one-dimensional), which consists of values 
 of the same type.
@@ -50,34 +45,40 @@ raw                | raw bytes (as pairs of hex digits)  | as.raw(255) = ff
 but can contain objects of different types. Example of a list: 
 ```{r}
 x <- list(1:10,"a", c(TRUE,FALSE), c(1 + 2i,3i))
+str(x)
 ```
 
-3. A data frame is a list of generic vectors of the same length and therefore has a two dimensional structure based on rows and columns. Example of a data frame:
+3. A data frame is a list of atomic vectors of the same length and therefore has a two dimensional structure based on rows and columns. Example of a data frame:
 ```{r}
-df <- data.frame(Name = c("M","X","D"), 
-                 Country = c('B','V','R'), 
-                 hasGlasses = c(FALSE,TRUE,TRUE))
-df
+df <- data.frame(nickName = c(1, 'B','X'), 
+                 hasGlasses = c(FALSE,"No","Yes"),
+                 bankAmount = c(800,1.2,-20))
+df # the different data types are coerced into one unique data type.
 ```
 Data frame is a list of lists with the same length. Each list from a data frame 
 represents a column or a row of a data frame. But a list can not be a data frame 
 because lists are linear vectors in one dimensional space. 
 That's why we have the statement.
 
-#Part II (7 Points) 
-*Explain each line of the following code. In addition, discuss what the output of identical(a, b) will be. Check the help files for the functions set.seed, identical, rnorm and cumsum.*
-```{r}
+# Part II (7 Points) 
+## Task
++ *Explain each line of the following code. In addition, discuss what the output of identical(a, b) will be. Check the help files for the functions set.seed, identical, rnorm and cumsum.*  
++ *system.time returns the time elapsed for the computation. Explain the differences:*  
+```{r, results="hide"}
   # ensure that results from a random generator are reproducible
 set.seed(1)
   # generate a vector of normally distributed random numbers
-largeVector <- rnorm(1e7, mean = 5, sd = 10) 
+largeVector <- rnorm(100, mean = 5, sd = 10) 
   # define a and b
 a <- cumsum(largeVector)[1:100] 
 b <- cumsum(largeVector[1:100])
   # is a equal to b?
 identical(a, b) 
+
+system.time(cumsum(largeVector)[1:100])
+system.time(cumsum(largeVector)[1:100])
 ```
-**Answer:**  
+## Answer  
   
 * Because we ran the function set.seed before, the result of randomly choosen largeVector is reproducible for a and b. This means we are now working with the only one largeVector. 
 * A *cumulative sum (cumsum)* is a sequence of partial sums of a given sequence.  
@@ -96,22 +97,10 @@ b = cumsum(largeVector[1:100])
 b = cumsum(k1 k2 k3 ... k100)  
 b = k1  k1+k2  k1+k2+k3 ...  k1+k2+k3+...+k100  
 
-*system.time returns the time elapsed for the computation. Explain the differences:*  
+* Now let see why we get different results when applying the function system.time to a and b. On the one hand, *system.time(cumsum(largeVector)[1:100])* firstly try to calculate the cumulative sum of the whole largeVector, which contains 10^8 elements. This would take R a while to finish. On the other hand, *system.time(cumsum(largeVector[1:100]))* firstly get the first 100 elements of largeVector and then calculate the cumulative sum of these 100 elements, which would be much faster to run. That's why we have the difference. 
 
-**Answer:**    
-```{r}
-system.time(cumsum(largeVector)[1:100])
-```
-  
-```{r}
-system.time(cumsum(largeVector[1:100]))
-```
-
-\newpage
-
-#Part III (20 Points)
-
-
+# Part III (20 Points)
+## Task
 *Conduct a regression analysis and report your findings. The report should contain the following sections:*
 
 * *data import* 
@@ -121,28 +110,28 @@ system.time(cumsum(largeVector[1:100]))
 * *discussion of model fit, e.g. goodness of fit, significance of regressors*
 * *interpreting the model*
 
-**Answer:**  
+## Answer
 **Logistic_Regression_Titanic:**  
 
-## Data import 
-
-Firstly we need to import the necessary libraries and dataset. 
-```{r loading, message=FALSE, warning=FALSE}
+### Data import
+Firstly we need to import the data as well as some neccessary libraries
+```{r}
 library(ggplot2)
-library(gridExtra) # install.packages("gridExtra") if needed
+# install.packages("gridExtra")
+library(gridExtra)
 
-load(file = "./datasets/titanic.Rdata")
+load(file = "/Users/XuanSon/Desktop/titanic.Rdata")
 ```
   
-## Descriptive statistics and data validation
+### Descriptive statistics and data validation  
 Let's take a look at the data to get a general overview of it
 ```{r}
   # See which variables are given in the data set through a small sample of the dataset
 head(titanic,5)
 ```
 
-Let's summarize the  variables 
-```{r}
+Let's summarize the given variables 
+```{r, results = "hide"}
 str(titanic)
 ```
 
@@ -163,13 +152,10 @@ boat        | Lifeboat                           | factor with 28 levels
 body        | Body Identification Number         | labelled vector
 home.dest   | Home/Destination                   | labelled vector
 
-
-Let's output a descriptive statistic of all variables for an overview of the data
+Let's look at some descriptive statistics of the data set
 ```{r}
 summary(titanic)
 ```
-
-
 
 Since data frame aims to describes the survival status of individual passengers on the Titanic dependent on many different features. Let's take a look at some useful graphics. 
 
@@ -178,23 +164,29 @@ Since data frame aims to describes the survival status of individual passengers 
 titanic$survived <- factor(titanic$survived)
 titanic$age <- as.numeric(titanic$age)
 titanic$fare <- as.numeric(titanic$fare)
-titanic$sibsp <- as.numeric(titanic$sibsp)
-titanic$parch <- as.numeric(titanic$parch)
+titanic$sibsp <- as.integer(titanic$sibsp)
+titanic$parch <- as.integer(titanic$parch)
 
-
+  # Frequency of each survived category
 ggplot(titanic, aes(survived, fill = survived)) + geom_bar() + 
     scale_fill_discrete(breaks = c("0", "1"),labels = c("No", "Yes")) + 
     labs(subtitle = "Frequency of survival")
 ```
+  
+There are unfortunately more unsurvived passenger than survived ones, namely 61,8% the given observations are generated from unsurvived passengers. Maybe it would be helpful to look closer at the relationship between our target variable and some explanatory variables. (We only show the code of one relationship since the codes are mostly similar to each other)
 
-```{r fig.height=6, fig.width=8}
-  # Let's see how survival depends on other variables
-p1 <- ggplot(titanic, aes(x = sex,fill = survived)) + 
-    geom_bar() + scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
+```{r, fig.height=10, fig.width=8, warning=FALSE}
+  # How survival depends on sex
+p1 <- ggplot(titanic, aes(x = sex, fill = survived)) + 
+    geom_bar() + 
+    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
     labs(subtitle = "Survival by Sex", y = "No. of passengers", x = " ")
+```
 
+```{r, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE}
 p2 <- ggplot(titanic, aes(pclass,fill = survived)) + 
-    geom_bar() + scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
+    geom_bar() + 
+    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
     labs(subtitle = "Survival by Passenger class", y = "No. of passengers", x = " ") + 
     ylim(0,800)
     
@@ -208,58 +200,67 @@ p4 <- ggplot(titanic, aes(parch,fill = survived)) +
     labs(subtitle = "Survival by Number of\nParents/Children Aboard ", 
          y = "No. of passengers", x = " ")
 
-p5 <- ggplot(titanic, aes(age,fill = survived)) + geom_histogram(bins = 10) +
+p5 <- ggplot(titanic, aes(age,fill = survived)) + geom_histogram(bins = 20) +
     scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) +
     labs(subtitle = "Survival by Age", y = "No. of passengers", x = " ")
 
 p6 <- ggplot(titanic, aes(fare,fill = survived)) + geom_histogram(bins = 10) +
     scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) +
-    labs(subtitle = "Survival by Age", y = "No. of passengers", x = " ")
+    labs(subtitle = "Survival by Fare", y = "No. of passengers", x = " ") 
 
 grid.arrange(p1,p2,p3,p4,p5,p6,ncol = 2)
-
 ```
+
+First conclutions:
++ Females have a much higher chance of survival than males. The *sex* variable is important in our predictions  
++ Passengers from 3rd class are less likely to survive than those from 1st and 2rd class.
++ In general, people without any siblings or spouses are less like .....
 
 Let's create some more interesting graphs  
 ```{r}
   # 
-ggplot(titanic, aes(x = interaction(sex,pclass), fill = survived)) + geom_bar() + 
+p7 <- ggplot(titanic, aes(x = interaction(sex,pclass), fill = survived)) + geom_bar() + 
     scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes"))
+
 ```
 
 So after getting the first overlook of our data set as well as the given variables, let's take a look at possible missing values in the data set
 ```{r}
 any(is.na(titanic))
 sapply(titanic, function(x) sum(is.na(x)))
+sapply(titanic, function(x) sum(x == ""))
 ```
 
-Some first annotations:  
-* The variable *Age* contains about 20% missing values. We assume that Age does have influence on predicting the survival, so we will try to handle these missing values later on.  
+Some annotations:  
+* The variable *age* contains about 20% missing values. We assume that Age does have influence on predicting the survival, so we will try to handle these missing values later on.  
 * The varibale *body* contains about 91% missing values. It is quite a high amount. Probably we would drop this variable out of our model.  
 * The amounts of missing vales of *fare* and *embarked* are very small. Maybe we would just drop the concerned passengers from the data set or replace the missing values by one certain value.  
+* The variable *cabin* also contain a large amount of missing values (1014). We wonder if this variable should necessarily be filled. Let do it in the next step.
 
+### Identification of relevant regressors    
+Let's clean our data due to unnecessary information:  
+  
+Since some variables do not to contain a lot useful information to our model, we would drop them from our model. These are: *name, cabin, ticket, boat, body, home.dest*
++ We assume that the name of a passenger does not have any influence on his/her chance of survival. This will be discussed later on when we interprete the model.  
++ We also ignore cabin, since its amount of missing values is too big 
++ Aparently the chance of survival does not depend on ticket and home-destination. The boat number and body identification number are available only after the Titanic had sunk. So they should not be involve in the model as well.
 
-
-##3. Identification of relevant regressors
-
-
-Let's clean our data due to unnecessary information: 
-Since some variables do not to contain a lot useful information to our model, we would drop them from our model. These are: *nam, cabin, ticket, boat, body, home.dest*
+Let drop all irrelevant variables.  
 ```{r}
-titanic = titanic[ , !(names(titanic) %in% c("name","cabin","ticket","boat","body","home.dest"))]
+dropValue <- c("name","cabin","ticket","boat","body","home.dest")
+titanic = titanic[ , !(names(titanic) %in% dropValue)]
 ```
   
-Missing values also need to be handled  
+Missing values also need to be handled.    
 * Variable *age*: Replace missing values by the mean *age*  
 ```{r}
 titanic$age[is.na(titanic$age)] <- mean(titanic$age,na.rm = TRUE)
 ```
-     
+
 * Variable *fare*: Replace 1 missing value by the mean *fare* in the concerned *pclass*.  
 ```{r}
 titanic$fare[is.na(titanic$fare)] <- mean(titanic$fare,na.rm = TRUE)
 ```
-
 
 * Variable *embarked*: Replace 2 missing values by the most frequent *embarked* value.  
 ```{r}
@@ -272,99 +273,79 @@ Some variables also need to be relabeled, so that the values (for example 1,2,3)
 titanic$pclass <- factor(titanic$pclass, 
                          levels = c("1st","2nd","3rd"), 
                          labels = c(1,2,3))
+
 titanic$sex <- factor(titanic$sex, 
                       levels = c("male","female"), 
                       labels = c(0,1))
+
 titanic$embarked <- factor(titanic$embarked, 
                            levels = c("Cherbourg", "Queenstown", "Southampton"), 
                            labels = c(1, 2, 3)) 
+
 ```
   
 Before we start modelling, let's check once again, whether all missing values are handled.  
 ```{r}
-any(is.na(titanic))
+any(is.na(titanic)) 
+any(is.null(titanic))
+str(titanic)
 ```
   
-**4. Fitting a regression model**  
+So no more missing values. It's time to build the regression model.
+
+### Fitting a regression model  
 Let's create a train and test data set
 ```{r}
+set.seed(1) # ensure that the result of any random generator is reproducible 
 titanic <- titanic[sample(1:nrow(titanic)),] # shuffle the rows
-train <- titanic[1:1000,] # get the first 1000 passengers for training data
-test <- titanic[1001:1309,] # the rest passengers for test data
+train <- titanic[1:900,] # get the first 1000 passengers for training data
+test <- titanic[901:1309,] # the rest passengers for test data
 ```
 
 Let's fit the logistic regression model.  
 ```{r}
-model_full <- glm(survived ~. , family = binomial, data = train) # model with all filtered features
+  # model with all filtered features
+model_full <- glm(survived ~. , family = binomial, data = train) 
+summary(model_full)
+  # model with backward selection
 model_opt <- step(model_full) 
 summary(model_opt)
 ```
 
-**5. Discussion of model fit, e.g. goodness of fit, significance of regressors**
+### Discussion of model fit, e.g. goodness of fit, significance of regressors
 
 ```{r}
-  # Predicting the test results
-test_predict <- predict(model_opt,type = 'response',
-                        newdata = test[-2]) # apply the model to the test data
+  # Predicting the test results based on our modell_opt
+
+test_predict <- predict(model_full,type = 'response',
+                        newdata = test[-2]) 
 survived_predict <- ifelse(test_predict > 0.5,1,0) 
-confusion_matrix <- table(test[,2],survived_predict) # create confusion matrix
+confusion_matrix <- table(test[,2],survived_predict) 
 confusion_matrix
 
+
+test_predict <- predict(model_opt,type = 'response',
+                        newdata = test[-2]) 
+survived_predict <- ifelse(test_predict > 0.5,1,0) 
+confusion_matrix <- table(test[,2],survived_predict) 
+confusion_matrix
+
+
+
+  # model accuracy 
 accuracy <- mean(survived_predict == test$survived)*100
-print(paste("Model accuracy is ", accuracy, "%"))
-
-
+print(paste("Model accuracy is", round(accuracy,digits = 2), "%"))
 ```
 
+Let's take a look at the significance of regressors in our model.
+```{r}
+summary(model_opt)
+```
+The p-value, which ranges between 0 and 1, represents the significance of each regressor. The higher p-value is, the more insignificant is the concerned regressor. As we can see in the output above, *embarked* is statistically insignificant. In contrast, *sex* has the lowest p-value, which means that sex of the passenger associate strongly with the target variable *survived*
 
-**6. Interpreting the model**
-
-
-
-
-
-Alternative?:
-
-load(file = "./datasets/miete.Rdata")
-
-miete$bez <- as.integer(miete$bez)
-miete$wohngut <- factor(miete$wohngut)
-miete$wohnbest <- factor(miete$wohnbest)
-miete$ww0 <- factor(miete$ww0)
-miete$zh0 <- factor(miete$zh0)
-miete$badkach0 <- factor(miete$badkach0)
-miete$badextra <- factor(miete$badextra)
-miete$kueche <- factor(miete$kueche)
-
-Function defines normal/good/best living location
-myfunction <- function(x,y){
- if (x == '0' && y == '0') {
-     return(1)
- } else if (x == 1) {
-     return(2)
- } else if (y == 1) {
-     return(3)
- }
-}
-
-Apply defined function to wohngut and wohnbest
-wohnlage <- mapply(myfunction, miete$wohngut, miete$wohnbest)
-
-Replace variables wohngut and wohnbest by new varibale called wohnlage
-miete <- data.frame(miete[1:6], wohnlage, miete[9:13])
-
-Factorise variable wohnlage: 1 for normal, 2 for good and 3 for best
-miete$wohnlage <- factor(miete$wohnlage)
-levels(miete$wohnlage) <- list(normal = 1, gut = 2, best = 3)
-str(miete)
-
-max_model <- lm(formula = nm ~ nmqm + wfl + rooms + bj + bez + wohnlage + ww0 + zh0 + badkach0 +
-              badextra + kueche, data = miete)
-best_model <- step(max_model, direction = "backward")
-max_model
-best_model
-
-
+### Interpreting the model
+k-cross validation
+Name als regressor 
 
 
 
