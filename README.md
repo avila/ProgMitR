@@ -6,8 +6,8 @@ Alles geht um R und nur R
 
     .
     ├── ...
-    ├── seminararbeit_x     # each paper with its own folder
-    │   ├── datasets        # datasets folder for each paper
-    │   ├── output          # output for saving results 
+    ├── Seminararbeit_x     # each paper with its own folder
+    │   ├── Datasets        # datasets folder for each paper
+    │   ├── Output          # output for saving results 
     │   └── ...             # ... 
     └── ...
