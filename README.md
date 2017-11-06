@@ -3,7 +3,6 @@ Alles geht um R und nur R
 
 ## Folder Structure
 
-
     .
     ├── ...
     ├── Seminararbeit_x     # each paper with its own folder
