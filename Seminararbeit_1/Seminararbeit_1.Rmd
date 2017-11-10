@@ -1,31 +1,33 @@
 ---
-title: "Programmieren mit R: Seminararbeit_1"
+title: 'Programmieren mit R: Seminararbeit_1'
 author:
-- Daniyar Akhmetov 
+- Daniyar Akhmetov
 - Marcelo Rainho Avila
 - Xuan Son Le
-date: "Abgabedatum: 14/11/2017"
-fontsize: 12
-lof: false
-graphics: true
-documentclass: article
-output: 
+date: 'Abgabedatum: 14/11/2017'
+output:
   pdf_document:
-    toc: TRUE # table content (Inhaltverzeichnis)
+    keep_tex: yes
     latex_engine: pdflatex
-    toc_depth: 3 # wie tief Inhaltverzeichnis, Hierarchie
-    number_sections: true
-    keep_tex: true
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    df_print: paged
+    toc: yes
+    toc_depth: '3'
+graphics: yes
+lof: no
+fontsize: 12
+documentclass: article
 ---
-
-
 \newpage
 # Part I (3 Points)  
 
 ## Tasks  
-- *What are the atomic vector types in R? Explain which value they can take and give an example!*  
-- *What is the difference between generic and atomic vectors?*  
-- *Explain the following statement: A data frame is a list, but not every list is a data frame.*  
+* *What are the atomic vector types in R? Explain which value they can take and give an example!*
+* *What is the difference between generic and atomic vectors?*
+* *Explain the following statement: A data frame is a list, but not every list is a data frame.*  
 
 ## Answer 
   
@@ -62,8 +64,8 @@ That's why we have the statement.
 
 # Part II (7 Points) 
 ## Task
-+ *Explain each line of the following code. In addition, discuss what the output of identical(a, b) will be. Check the help files for the functions set.seed, identical, rnorm and cumsum.*  
-+ *system.time returns the time elapsed for the computation. Explain the differences:*  
+* *Explain each line of the following code. In addition, discuss what the output of identical(a, b) will be. Check the help files for the functions set.seed, identical, rnorm and cumsum.*
+* *system.time returns the time elapsed for the computation. Explain the differences:*  
 ```{r, results="hide"}
   # ensure that results from a random generator are reproducible
 set.seed(1)
@@ -102,253 +104,308 @@ b = k1  k1+k2  k1+k2+k3 ...  k1+k2+k3+...+k100
 # Part III (20 Points)
 ## Task
 *Conduct a regression analysis and report your findings. The report should contain the following sections:*
-
 * *data import* 
 * *descriptive statistics and data validation*
 * *identification of relevant regressors*
 * *fitting a regression model*
 * *discussion of model fit, e.g. goodness of fit, significance of regressors*
 * *interpreting the model*
-
 ## Answer
-**Logistic_Regression_Titanic:**  
-
+**We decided on a logistic regression with the data set titanic:**  
 ### Data import
-Firstly we need to import the data as well as some neccessary libraries
-```{r}
+Firstly we need to import all neccessary libraries
+```{r, message = FALSE, results = "hide"}
 library(ggplot2)
 # install.packages("gridExtra")
 library(gridExtra)
+# install.packages(("Hmisc"))
+library(Hmisc)
+```
 
+Load titanic data
+```{r}
 load(file = "/Users/XuanSon/Desktop/titanic.Rdata")
 ```
-  
+
 ### Descriptive statistics and data validation  
-Let's take a look at the data to get a general overview of it
-```{r}
-  # See which variables are given in the data set through a small sample of the dataset
-head(titanic,5)
+
+Get the data description
+``` {r ,introDescribe, message=FALSE, results="hide"}
+  # get dataset description
+describe(titanic)
 ```
+**Let's summarize the results:**  
+  
+* Regarding the given values:  
+    + So we have 1309 observations with 14 features in total.
+    + Only 38,2% of 1309 passengers survived. There are more male (843) than female (466) in this data set
+    + The average age of these passengers is about 30.
+    + The fare varies between 0 and 512 British Pound. 
+    + A large majority of passengers embarks on the titanic in Southampton.
 
-Let's summarize the given variables 
-```{r, results = "hide"}
-str(titanic)
-```
+* Regarding missing values:  
+    + The feature *age* contains about 20% missing values. We assume that Age does have influence on predicting the survival, so we will try to handle these missing values later on.
+    + The varibale *body* contains about 91% missing values. It is quite a high amount. Probably we would drop this feature out of our model.
+    + The amounts of missing vales of *fare* and *embarked* are very small. Maybe we would just drop the concerned passengers from the data set or replace the missing values by one certain value.
+    + The feature *cabin* also contain a large amount of missing values (1014). We wonder if this feature should necessarily be filled. Let do it in the next step.
 
-**variable**| **description**                    | **Notes**
-------------|------------------------------------|-----------------------
-pclass      | Passenger Class                    | factor with 3 levels
-survived    | Survival                           | labelled vector
-name        | Passenger Name                     | labelled vector
-sex         | Passenger Sex                      | factor with 2 levels
-age         | Passenger Age                      | labelled vector
-sibsp       | Number of Siblings/Spouses Aboard  | labelled vector
-parch       | Number of Parents/Children Aboard  | labelled vector
-ticket      | Ticket Number                      | labelled vector
-fare        | Passenger Fare                     | labelled vector
-cabin       | Cabin                              | factor with 187 levels
-embarked    | Port of Embarkation                | factor with 3 levels
-boat        | Lifeboat                           | factor with 28 levels
-body        | Body Identification Number         | labelled vector
-home.dest   | Home/Destination                   | labelled vector
-
-Let's look at some descriptive statistics of the data set
-```{r}
-summary(titanic)
-```
-
-Since data frame aims to describes the survival status of individual passengers on the Titanic dependent on many different features. Let's take a look at some useful graphics. 
-
+Since data frame aims to describes the survival status of individual passengers on the Titanic dependent on many different features, let's take a closer look at the relationships between our target feature *survived* and the explanatory features through some useful plots.  
+  
 ```{r, fig.width=3,fig.height=1.5}
-  # Transform some variables, which are given as a vector
-titanic$survived <- factor(titanic$survived)
+  # Transform some features, which are given as a vector
 titanic$age <- as.numeric(titanic$age)
 titanic$fare <- as.numeric(titanic$fare)
-titanic$sibsp <- as.integer(titanic$sibsp)
-titanic$parch <- as.integer(titanic$parch)
+titanic$sibsp <- as.numeric(titanic$sibsp)
+titanic$parch <- as.numeric(titanic$parch)
 
-  # Frequency of each survived category
-ggplot(titanic, aes(survived, fill = survived)) + geom_bar() + 
-    scale_fill_discrete(breaks = c("0", "1"),labels = c("No", "Yes")) + 
-    labs(subtitle = "Frequency of survival")
+  # Some features also need to be factorized, so that numeric values 
+  # (for example 1,2,3) should not be treated as number but as category. 
+titanic$pclass <- factor(titanic$pclass)
+titanic$survived <- factor(titanic$survived,levels = c(0,1),labels = c("No","Yes"))
+titanic$sex <- factor(titanic$sex)
+titanic$embarked <- factor(titanic$embarked) 
 ```
-  
-There are unfortunately more unsurvived passenger than survived ones, namely 61,8% the given observations are generated from unsurvived passengers. Maybe it would be helpful to look closer at the relationship between our target variable and some explanatory variables. (We only show the code of one relationship since the codes are mostly similar to each other)
 
-```{r, fig.height=10, fig.width=8, warning=FALSE}
-  # How survival depends on sex
+We use barplots for categorial features:  
+```{r, fig.height=4, fig.width=12, warning=FALSE}
 p1 <- ggplot(titanic, aes(x = sex, fill = survived)) + 
     geom_bar() + 
-    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
-    labs(subtitle = "Survival by Sex", y = "No. of passengers", x = " ")
-```
+    labs(subtitle = "Survival by Sex", y = "No. of passengers", x = " ") +
+    ylim(0,1000)
 
-```{r, echo=FALSE, fig.height=8, fig.width=8, warning=FALSE}
-p2 <- ggplot(titanic, aes(pclass,fill = survived)) + 
+p2 <- ggplot(titanic, aes(x = pclass,fill = survived)) + 
     geom_bar() + 
-    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
     labs(subtitle = "Survival by Passenger class", y = "No. of passengers", x = " ") + 
-    ylim(0,800)
+    ylim(0,1000)
     
-p3 <- ggplot(titanic, aes(sibsp,fill = survived)) + 
-    geom_bar() + scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
+p3 <- ggplot(titanic, aes(x = sibsp, fill = survived)) + 
+    geom_bar() + 
     labs(subtitle = "Survival by Number of\nSiblings/Spouses Aboard ", 
-         y = "No. of passengers", x = " ")
+         y = "No. of passengers", x = " ") + ylim(0,1000)
 
-p4 <- ggplot(titanic, aes(parch,fill = survived)) + 
-    geom_bar() + scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) + 
+p4 <- ggplot(titanic, aes(x = parch, fill = survived)) + geom_bar() +
     labs(subtitle = "Survival by Number of\nParents/Children Aboard ", 
-         y = "No. of passengers", x = " ")
+         y = "No. of passengers", x = " ") 
 
-p5 <- ggplot(titanic, aes(age,fill = survived)) + geom_histogram(bins = 20) +
-    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) +
-    labs(subtitle = "Survival by Age", y = "No. of passengers", x = " ")
-
-p6 <- ggplot(titanic, aes(fare,fill = survived)) + geom_histogram(bins = 10) +
-    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes")) +
-    labs(subtitle = "Survival by Fare", y = "No. of passengers", x = " ") 
-
-grid.arrange(p1,p2,p3,p4,p5,p6,ncol = 2)
+grid.arrange(p1,p2,p3,p4,ncol = 4)
 ```
 
-First conclutions:
-+ Females have a much higher chance of survival than males. The *sex* variable is important in our predictions  
-+ Passengers from 3rd class are less likely to survive than those from 1st and 2rd class.
-+ In general, people without any siblings or spouses are less like .....
+For metric features *age* and *fare* we use boxplots.  
+```{r, fig.height=5, fig.width=8, warning=FALSE}
+p5 <- ggplot(titanic, aes(y = age, x = survived, fill = survived)) +
+    geom_boxplot() +
+    labs(subtitle = "Boxplot age", y = "Age", x = " ")
 
-Let's create some more interesting graphs  
-```{r}
-  # 
-p7 <- ggplot(titanic, aes(x = interaction(sex,pclass), fill = survived)) + geom_bar() + 
-    scale_fill_discrete(breaks = c("0", "1"), labels = c("No", "Yes"))
+p6 <- ggplot(titanic, aes(y = fare, x = survived, fill = survived)) + 
+    geom_boxplot() +
+    labs(subtitle = "Boxplot fare", y = "Fares", x = " ") 
 
+grid.arrange(p5,p6,ncol = 2)
 ```
-
-So after getting the first overlook of our data set as well as the given variables, let's take a look at possible missing values in the data set
-```{r}
-any(is.na(titanic))
-sapply(titanic, function(x) sum(is.na(x)))
-sapply(titanic, function(x) sum(x == ""))
-```
-
-Some annotations:  
-* The variable *age* contains about 20% missing values. We assume that Age does have influence on predicting the survival, so we will try to handle these missing values later on.  
-* The varibale *body* contains about 91% missing values. It is quite a high amount. Probably we would drop this variable out of our model.  
-* The amounts of missing vales of *fare* and *embarked* are very small. Maybe we would just drop the concerned passengers from the data set or replace the missing values by one certain value.  
-* The variable *cabin* also contain a large amount of missing values (1014). We wonder if this variable should necessarily be filled. Let do it in the next step.
-
-### Identification of relevant regressors    
-Let's clean our data due to unnecessary information:  
   
-Since some variables do not to contain a lot useful information to our model, we would drop them from our model. These are: *name, cabin, ticket, boat, body, home.dest*
-+ We assume that the name of a passenger does not have any influence on his/her chance of survival. This will be discussed later on when we interprete the model.  
-+ We also ignore cabin, since its amount of missing values is too big 
-+ Aparently the chance of survival does not depend on ticket and home-destination. The boat number and body identification number are available only after the Titanic had sunk. So they should not be involve in the model as well.
+We learn the following things from these plots:  
+* *sex*: Females have a much higher chance of survival than males. The *sex* feature is important in our predictions
+* *pclass*: Passengers from 3rd class are less likely to survive than those from 1st and 2rd class.  
+* *sibsp* and *parch*: having too many siblings/spouses/parents/children on board or travelling alone would decrease the chance of surviving. Travelling with one or two family members would be better in this case.
+* Feature *fare* and *age* contains some outliers, which should be treated later.
 
-Let drop all irrelevant variables.  
+The outlier values of *fare* and *age*.
+```{r eval=FALSE}
+sort(boxplot(na.omit(titanic$age))$out) # outlier from 67 years old
+sort(boxplot(na.omit(titanic$fare))$out) # outlier from 66,6 British Pound
+```
+  
+It could be also helpful to take a look at the relationship of explanatory features:
+
 ```{r}
 dropValue <- c("name","cabin","ticket","boat","body","home.dest")
-titanic = titanic[ , !(names(titanic) %in% dropValue)]
+corDataframe <- titanic[ , !(names(titanic) %in% dropValue)] 
+corDataframe <- sapply(corDataframe, function(x) x <- as.integer(x))
+cor(na.omit(corDataframe))
 ```
   
-Missing values also need to be handled.    
-* Variable *age*: Replace missing values by the mean *age*  
++ Our target feature *survived* correlates mostly to *sex* and *pclass*, followed by *fare* and *embarked*. 
++ *pclass* and *fare* correlates strongly negative to each other. So the first class is more expensive than second and third class.
++ *pclass* also correlates quite strongly with *age*. But it could also be a spurious correlation.
++ *sibsp* and *parch* also correlate, since both declare family size
+
+Let us show some multiple relationships graphically:
+```{r, fig.height=6, fig.width=8, warning=FALSE}
+p7 <- ggplot(titanic,aes(pclass, fill = survived)) + 
+    facet_grid( ~ sex) + 
+    geom_bar() + labs(subtitle = "Survival by sex and passenger class",
+                      y = "No. of passengers")
+
+p8 <- ggplot(titanic,aes(x = pclass, fill = survived)) +
+    facet_grid( ~ embarked) + geom_bar(position = "dodge") + 
+    labs(subtitle = "Survival by embarked and passenger class", 
+         y = "No. of passengers", x = "")
+
+p9 <- ggplot(titanic, aes(y = fare, x = survived, fill = survived)) +
+    facet_grid( ~ pclass) + 
+    geom_boxplot() + 
+    labs(subtitle = "Survival by fare and passenger class",
+         y = "Fare") 
+
+p10 <- ggplot(titanic, aes(y = age, x = survived, fill = survived)) +
+    facet_grid( ~ pclass) + geom_boxplot() + 
+    labs(subtitle = "Survival by age and passenger class",
+         y = "Age") 
+
+grid.arrange(p7, p8, p9, p10, ncol = 2)
+
+```
+  
++ Female passengers in the first and second class are mostly survived, meanwhile men in all classes have a similar chance of survival, which is quite low. 
++ A major of passenger embarked in Southampton. Most of them did not survive, especially those in second and third classes. 
++ Unsurprisingly the first class is the most expensive one. The average fare of survived passengers is also higher in the first and second classes. This information could be better explained if we have more information about the relationship between *pclass* and *cabin*.
++ The average age of first class passenger (regardless of survival) is higher than the rest.
+
+That might be enough with plots. Let's move to the next step to choose the most important features for our models.
+
+### Identification of relevant regressors
+Since some features do not to contain a lot useful information to our model, we would drop them from our model. These are: *name, cabin, ticket, boat, body, home.dest*  
++ We assume that the name of a passenger does not have any influence on his/her chance of survival.
++ We also ignore cabin, since its amount of missing values is too big.  
++ Aparently the chance of survival does not depend on ticket and home-destination. The boat number and body identification number are available only after the Titanic had sunk. So they should not be involved in the model as well.  
+
+Let's drop these irrelevant features.  
 ```{r}
-titanic$age[is.na(titanic$age)] <- mean(titanic$age,na.rm = TRUE)
+dropValue <- c("name","cabin","ticket","boat","body","home.dest")
+titanic <-  titanic[ , !(names(titanic) %in% dropValue)] 
+
+# source: https://stackoverflow.com/questions/4605206
 ```
 
-* Variable *fare*: Replace 1 missing value by the mean *fare* in the concerned *pclass*.  
+Let's handle missing values and outliers before creating the model.  
+  
+* feature *age*: Replace missing values by the mean *age*. We also remove all ages above 67 regarding the outliers. 
+
 ```{r}
-titanic$fare[is.na(titanic$fare)] <- mean(titanic$fare,na.rm = TRUE)
+  # Replace the missing values as well as outlier values by the average age
+meanAge <- mean(titanic$age, na.rm = TRUE)
+titanic$age[is.na(titanic$age)] <- meanAge
+titanic$age <- sapply(titanic$age, function(x) ifelse(x > 67, x <- meanAge, x))
 ```
 
-* Variable *embarked*: Replace 2 missing values by the most frequent *embarked* value.  
+* feature *fare*: Replace 1 missing value by the mean *fare* in the concerned *pclass*. We also remove all fares above 66,6 regarding the shown outliers. 
+```{r}
+  # Replace the missing values as well as outlier values by the average fare
+meanFare <- mean(titanic$fare, na.rm = TRUE)
+titanic$fare[is.na(titanic$fare)] <- meanFare
+titanic$fare <- sapply(titanic$fare, function(x) ifelse(x > 66.6, x <- meanFare, x))
+```
+
+* feature *embarked*: Replace missing value by the most frequent value.
 ```{r}
 summary(titanic$embarked)
 titanic$embarked[is.na(titanic$embarked)] <- "Southampton"
 ```
-
-Some variables also need to be relabeled, so that the values (for example 1,2,3) should not be treated as number but as category.  
-```{r}
-titanic$pclass <- factor(titanic$pclass, 
-                         levels = c("1st","2nd","3rd"), 
-                         labels = c(1,2,3))
-
-titanic$sex <- factor(titanic$sex, 
-                      levels = c("male","female"), 
-                      labels = c(0,1))
-
-titanic$embarked <- factor(titanic$embarked, 
-                           levels = c("Cherbourg", "Queenstown", "Southampton"), 
-                           labels = c(1, 2, 3)) 
-
+  
+Let's check once again, whether all missing values are handled.  
+``` {r}
+any(is.na(titanic))
 ```
   
-Before we start modelling, let's check once again, whether all missing values are handled.  
-```{r}
-any(is.na(titanic)) 
-any(is.null(titanic))
-str(titanic)
-```
-  
-So no more missing values. It's time to build the regression model.
+As we noticed before, travelling alone or with too many family members seems to decrease the chance of survival. Therefore we decide to create a new feature *numberFamlilyMember*, which contains the number of family member on board and a binary feature *anyFamilyMember*, which indicates whether there is any family member on board. Including *numberFamlilyMember* in the model can tell us whether a large family good for survival is or not, etc.
 
+```{r}
+ # define function for anyFamilyMember
+myFunction <- function(x,y){
+    if (x == '0' | y == '0') {
+     return("No")
+ } else {
+     return("Yes") }} # No if x = 0 or y = 0, else Yes
+
+  # apply myFunction to features sibsp and parch
+anyFamilyMember <- mapply(myFunction,titanic$sibsp, titanic$parch)
+  # create feature anyFamilyMember
+titanic <- data.frame(titanic,anyFamilyMember)
+  # factorise anyFamilyMember
+titanic$anyFamilyMember <- factor(titanic$anyFamilyMember)
+
+  # define function for numberFamilyMember
+myFunction1 <- function(x,y){return(x + y)}
+  # apply myFunction1 to features sibsp and parch
+numberFamilyMember <- mapply(myFunction1,titanic$sibsp, titanic$parch)
+  # create feature numberFamilyMember
+titanic <- data.frame(titanic,numberFamilyMember)
+
+# source: https://stackoverflow.com/questions/10078211
+```
 ### Fitting a regression model  
-Let's create a train and test data set
+Let's create a train and test data set. Now we still have 1309 passengers in total.
 ```{r}
-set.seed(1) # ensure that the result of any random generator is reproducible 
-titanic <- titanic[sample(1:nrow(titanic)),] # shuffle the rows
-train <- titanic[1:900,] # get the first 1000 passengers for training data
-test <- titanic[901:1309,] # the rest passengers for test data
+train <- titanic[1:1100,] # get the first 1000 passengers for training data
+test <- titanic[1101:1309,] # the rest passengers for test data
 ```
 
-Let's fit the logistic regression model.  
+Let's fit the logistic regression model. Hier we use the backward selection to keep only relevant regressors. A backward selection removes every regressor from a model step by step and compare the performance of model with and without this regressor.
+
 ```{r}
-  # model with all filtered features
-model_full <- glm(survived ~. , family = binomial, data = train) 
-summary(model_full)
-  # model with backward selection
-model_opt <- step(model_full) 
-summary(model_opt)
+  # Training a model with all filtered features. Hier we use the training data.
+model_full <- glm(survived ~., family = binomial, data = train) 
+  # Model after backward selection
+model <- step(model_full, direction = "backward") 
 ```
+
+From now we only use the model after backward selection as reference for the next steps.
 
 ### Discussion of model fit, e.g. goodness of fit, significance of regressors
-
+  
+Let's see how good our model performs regarding the accuracy.
 ```{r}
-  # Predicting the test results based on our modell_opt
+  # Predict the test data. The column survived is hidden during the predicting.
+test_predict <- predict(model,type = 'response', newdata = test[-2]) 
 
-test_predict <- predict(model_full,type = 'response',
-                        newdata = test[-2]) 
-survived_predict <- ifelse(test_predict > 0.5,1,0) 
+  # Assign the results into 2 categories of survival.
+survived_predict <- ifelse(test_predict > 0.5,"Yes","No") 
+
+  # Create a confusion matrix and print it.
 confusion_matrix <- table(test[,2],survived_predict) 
 confusion_matrix
 
-
-test_predict <- predict(model_opt,type = 'response',
-                        newdata = test[-2]) 
-survived_predict <- ifelse(test_predict > 0.5,1,0) 
-confusion_matrix <- table(test[,2],survived_predict) 
-confusion_matrix
-
-
-
-  # model accuracy 
+  # Calculate the accuracy and print it.
 accuracy <- mean(survived_predict == test$survived)*100
-print(paste("Model accuracy is", round(accuracy,digits = 2), "%"))
+print(paste("The model accuracy is", round(accuracy,digits = 2), "%"))
 ```
 
 Let's take a look at the significance of regressors in our model.
 ```{r}
-summary(model_opt)
+summary(model)
 ```
-The p-value, which ranges between 0 and 1, represents the significance of each regressor. The higher p-value is, the more insignificant is the concerned regressor. As we can see in the output above, *embarked* is statistically insignificant. In contrast, *sex* has the lowest p-value, which means that sex of the passenger associate strongly with the target variable *survived*
+The p-value, which ranges between 0 and 1, represents the significance of each regressor. The higher p-value is, the more insignificant is the concerned regressor. *sex* has the lowest p-value, which means that sex of the passenger associate strongly with the target feature *survived*.
+
+Let's calculate the Odd-Ratios.
+```{r}
+exp(model$coef)
+```
+
+Being a male will decrease the chance of surviving (weitere Intepretation please)
+
+```{r}
+anova(model, test = "Chisq")
+```
 
 ### Interpreting the model
-k-cross validation
-Name als regressor 
+There are still several ways to improve the quality of the data set as well as the performance of our predicted model. 
 
+On the one hand, there is a method called cross validation, which is used to limit problems like overfitting (overfitting: a model which contains too many explanatory variables than necessary). 
+  
+We also notice that the feature *name* actually contains some interesting information, which could be relevant to the predicted model. Many names contain such words like "Master", "Dr.", "Major", etc. Maybe it could somehow affect the result of survival. The code below shows how to split the title from the name. But we did not consider it furthermore because this new feature is extremly unbalanced. The major titles are "Mr." and "Mrs.", which actually determine the sex. Maybe it would be helpful to arrange another titles in some groups to balance this feature somehow. 
 
+```{r eval=FALSE, warning=FALSE}
+  # Split title from name
+nameSplit <- sapply(titanic$name, function(x) strsplit(x, "[,]"))
+nameSplit <- sapply(nameSplit, function(x) x <-  x[2])
+nameSplit <- sapply(nameSplit, function(x) strsplit(x, "[.]"))
+nameTitle <- sapply(nameSplit, function(x) x[1])
 
+  # See all unique titles 
+describe(nameTitle)
+  # source: https://www.math.ucla.edu/~anderson/rw1001/library/base/html/strsplit.html  
+```  
+ 
 
 
 
