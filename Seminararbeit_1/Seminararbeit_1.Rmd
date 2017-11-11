@@ -3,7 +3,7 @@ title: 'Programmieren mit R: Seminararbeit_1'
 author:
 - Daniyar Akhmetov
 - Marcelo Rainho Avila
-- Xuan Son Le
+- Xuan Son Le (4669361)
 date: 'Abgabedatum: 14/11/2017'
 output:
   pdf_document:
@@ -24,7 +24,7 @@ documentclass: article
 \newpage
 # Part I (3 Points)  
 
-## Tasks  
+## Task  
 * *What are the atomic vector types in R? Explain which value they can take and give an example!*
 * *What is the difference between generic and atomic vectors?*
 * *Explain the following statement: A data frame is a list, but not every list is a data frame.*  
@@ -40,7 +40,7 @@ logical            | TRUE/FALSE                          | c(TRUE,FALSE)
 integer            | integer numbers                     | c(1L, 10L, 100L)
 numeric            | real numbers                        | c(-26, 1.3, -0.25)
 complex            | complex numbers a+bi                | c(-2+3i, -4i, 0i)
-character          | letters or words                    | c("Hello","R","How are you")
+character          | strings (letters or words)          | c("Hello","2222","How are you")
 raw                | raw bytes (as pairs of hex digits)  | as.raw(255) = ff
 
 2. Generic vectors (lists) are also linear vectors (one-dimensional), 
@@ -57,9 +57,7 @@ df <- data.frame(nickName = c(1, 'B','X'),
                  bankAmount = c(800,1.2,-20))
 df # the different data types are coerced into one unique data type.
 ```
-Data frame is a list of lists with the same length. Each list from a data frame 
-represents a column or a row of a data frame. But a list can not be a data frame 
-because lists are linear vectors in one dimensional space. 
+Data frame is a list of atomic vectors with the same length. Each vector represents a column or a row of a data frame. But a list can not be a data frame because lists are linear vectors in one dimensional space. 
 That's why we have the statement.
 
 # Part II (7 Points) 
@@ -103,16 +101,18 @@ b = k1  k1+k2  k1+k2+k3 ...  k1+k2+k3+...+k100
 
 # Part III (20 Points)
 ## Task
-*Conduct a regression analysis and report your findings. The report should contain the following sections:*
+*Conduct a regression analysis and report your findings. The report should contain the following sections:*  
 * *data import* 
-* *descriptive statistics and data validation*
+* *descriptive statistics and data validation* 
 * *identification of relevant regressors*
 * *fitting a regression model*
 * *discussion of model fit, e.g. goodness of fit, significance of regressors*
-* *interpreting the model*
+* *interpreting the model*  
+
 ## Answer
 **We decided on a logistic regression with the data set titanic:**  
-### Data import
+
+### Data import  
 Firstly we need to import all neccessary libraries
 ```{r, message = FALSE, results = "hide"}
 library(ggplot2)
@@ -131,7 +131,6 @@ load(file = "/Users/XuanSon/Desktop/titanic.Rdata")
 
 Get the data description
 ``` {r ,introDescribe, message=FALSE, results="hide"}
-  # get dataset description
 describe(titanic)
 ```
 **Let's summarize the results:**  
@@ -140,7 +139,7 @@ describe(titanic)
     + So we have 1309 observations with 14 features in total.
     + Only 38,2% of 1309 passengers survived. There are more male (843) than female (466) in this data set
     + The average age of these passengers is about 30.
-    + The fare varies between 0 and 512 British Pound. 
+    + The fare varies between 0 and 512 Pre-1970 British Pound. 
     + A large majority of passengers embarks on the titanic in Southampton.
 
 * Regarding missing values:  
@@ -181,11 +180,14 @@ p2 <- ggplot(titanic, aes(x = pclass,fill = survived)) +
 p3 <- ggplot(titanic, aes(x = sibsp, fill = survived)) + 
     geom_bar() + 
     labs(subtitle = "Survival by Number of\nSiblings/Spouses Aboard ", 
-         y = "No. of passengers", x = " ") + ylim(0,1000)
+         y = "No. of passengers", x = " ") + 
+    ylim(0,1000) +
+    scale_x_continuous(breaks = c(0:8))
 
 p4 <- ggplot(titanic, aes(x = parch, fill = survived)) + geom_bar() +
     labs(subtitle = "Survival by Number of\nParents/Children Aboard ", 
-         y = "No. of passengers", x = " ") 
+         y = "No. of passengers", x = " ") + 
+    scale_x_continuous(breaks = c(0:8))
 
 grid.arrange(p1,p2,p3,p4,ncol = 4)
 ```
@@ -204,24 +206,19 @@ grid.arrange(p5,p6,ncol = 2)
 ```
   
 We learn the following things from these plots:  
-* *sex*: Females have a much higher chance of survival than males. The *sex* feature is important in our predictions
-* *pclass*: Passengers from 3rd class are less likely to survive than those from 1st and 2rd class.  
-* *sibsp* and *parch*: having too many siblings/spouses/parents/children on board or travelling alone would decrease the chance of surviving. Travelling with one or two family members would be better in this case.
-* Feature *fare* and *age* contains some outliers, which should be treated later.
 
-The outlier values of *fare* and *age*.
-```{r eval=FALSE}
-sort(boxplot(na.omit(titanic$age))$out) # outlier from 67 years old
-sort(boxplot(na.omit(titanic$fare))$out) # outlier from 66,6 British Pound
-```
-  
+* *sex*: Females have a much higher chance of survival than males. The *sex* feature is important in our predictions  
+* *pclass*: Passengers from 3rd class are less likely to survive than those from 1st and 2rd class.  
+* *sibsp* and *parch*: having too many siblings/spouses/parents/children on board or travelling alone would decrease the chance of surviving. Travelling with one or two family members would be better in this case.  
+* *fare* and *age* contains some outliers, which should be treated later.
+
 It could be also helpful to take a look at the relationship of explanatory features:
 
 ```{r}
 dropValue <- c("name","cabin","ticket","boat","body","home.dest")
 corDataframe <- titanic[ , !(names(titanic) %in% dropValue)] 
 corDataframe <- sapply(corDataframe, function(x) x <- as.integer(x))
-cor(na.omit(corDataframe))
+round(cor(na.omit(corDataframe)), digits = 2)
 ```
   
 + Our target feature *survived* correlates mostly to *sex* and *pclass*, followed by *fare* and *embarked*. 
@@ -230,16 +227,16 @@ cor(na.omit(corDataframe))
 + *sibsp* and *parch* also correlate, since both declare family size
 
 Let us show some multiple relationships graphically:
-```{r, fig.height=6, fig.width=8, warning=FALSE}
+```{r, fig.height=6, fig.width=10, warning=FALSE}
 p7 <- ggplot(titanic,aes(pclass, fill = survived)) + 
     facet_grid( ~ sex) + 
     geom_bar() + labs(subtitle = "Survival by sex and passenger class",
                       y = "No. of passengers")
 
-p8 <- ggplot(titanic,aes(x = pclass, fill = survived)) +
+p8 <- ggplot(subset(titanic, !is.na(embarked)), aes(x = pclass, fill = survived)) +
     facet_grid( ~ embarked) + geom_bar(position = "dodge") + 
     labs(subtitle = "Survival by embarked and passenger class", 
-         y = "No. of passengers", x = "")
+         y = "No. of passengers", x = "") + ylim(0,500)
 
 p9 <- ggplot(titanic, aes(y = fare, x = survived, fill = survived)) +
     facet_grid( ~ pclass) + 
@@ -261,13 +258,13 @@ grid.arrange(p7, p8, p9, p10, ncol = 2)
 + Unsurprisingly the first class is the most expensive one. The average fare of survived passengers is also higher in the first and second classes. This information could be better explained if we have more information about the relationship between *pclass* and *cabin*.
 + The average age of first class passenger (regardless of survival) is higher than the rest.
 
-That might be enough with plots. Let's move to the next step to choose the most important features for our models.
+That might be enough with plots. Let's move to the next step to choose the most important features for our model.
 
 ### Identification of relevant regressors
 Since some features do not to contain a lot useful information to our model, we would drop them from our model. These are: *name, cabin, ticket, boat, body, home.dest*  
-+ We assume that the name of a passenger does not have any influence on his/her chance of survival.
-+ We also ignore cabin, since its amount of missing values is too big.  
-+ Aparently the chance of survival does not depend on ticket and home-destination. The boat number and body identification number are available only after the Titanic had sunk. So they should not be involved in the model as well.  
+* We assume that the name of a passenger does not have any influence on his/her chance of survival.  
+* We also ignore cabin, since its amount of missing values is too big.  
+* Aparently the chance of survival does not depend on ticket and home-destination. The boat number and body identification number are available only after the Titanic had sunk. So they should not be involved in the model as well.  
 
 Let's drop these irrelevant features.  
 ```{r}
@@ -279,24 +276,22 @@ titanic <-  titanic[ , !(names(titanic) %in% dropValue)]
 
 Let's handle missing values and outliers before creating the model.  
   
-* feature *age*: Replace missing values by the mean *age*. We also remove all ages above 67 regarding the outliers. 
+* **age**: Replace missing values by the mean *age*. We decided not to remove or replace the outliers of *age* since the gap between them and the data is not so big.   
 
 ```{r}
-  # Replace the missing values as well as outlier values by the average age
+  # Replace the missing values by the average age
 meanAge <- mean(titanic$age, na.rm = TRUE)
 titanic$age[is.na(titanic$age)] <- meanAge
-titanic$age <- sapply(titanic$age, function(x) ifelse(x > 67, x <- meanAge, x))
 ```
 
-* feature *fare*: Replace 1 missing value by the mean *fare* in the concerned *pclass*. We also remove all fares above 66,6 regarding the shown outliers. 
+* **fare**: Replace 1 missing value by the mean *fare* in the concerned *pclass*.
 ```{r}
-  # Replace the missing values as well as outlier values by the average fare
+  # Replace the missing values by the average fare
 meanFare <- mean(titanic$fare, na.rm = TRUE)
 titanic$fare[is.na(titanic$fare)] <- meanFare
-titanic$fare <- sapply(titanic$fare, function(x) ifelse(x > 66.6, x <- meanFare, x))
 ```
 
-* feature *embarked*: Replace missing value by the most frequent value.
+* **embarked**: Replace missing value by the most frequent value.
 ```{r}
 summary(titanic$embarked)
 titanic$embarked[is.na(titanic$embarked)] <- "Southampton"
@@ -345,14 +340,35 @@ Let's fit the logistic regression model. Hier we use the backward selection to k
 ```{r}
   # Training a model with all filtered features. Hier we use the training data.
 model_full <- glm(survived ~., family = binomial, data = train) 
-  # Model after backward selection
+  # Run a backward selection
 model <- step(model_full, direction = "backward") 
 ```
 
-From now we only use the model after backward selection as reference for the next steps.
+From now we only use the model after backward selection as reference for the next steps. Our model contains from now the following features: *pclass, sex, age, sibsp, embarked, anyFamilyMember*
 
 ### Discussion of model fit, e.g. goodness of fit, significance of regressors
-  
+
+Let's take a look at the significance of regressors in our model.
+```{r}
+summary(model)
+```
+The p-value, which ranges between 0 and 1, represents the significance of each regressor. The higher p-value is, the more insignificant is the concerned regressor. *sex* has the lowest p-value, which means that sex of the passenger associate strongly with the target feature *survived*. The next significant features are *pclass* and *age*. The rest seems to be higher but still nearby 0.
+
+Let's calculate the Odd-Ratios.
+```{r}
+exp(model$coef)
+```
+
+Being a male will increase the chance of surviving by the factor of 0.068 (which means the chance of surviving would be smaller). Passengers from the first class have more chance for surviving then other classes, which had been estimated before.  
+
+```{r}
+anova(model, test = "Chisq")
+```
+
+The anova() function allows us to see the difference between the null and residuals deviances. The null deviances is 1497.9, which indicates the performance of the model with only the intercept based on the Chi-Square values. The difference between the null deviance and the residual deviance shows how well the actual model performs against the null model. Again, feature *sex* performs the best regarding the significant improment of the residual deviance, following by *pclass* and *age*. Other features also reduce the residual deviance, eventhough just a bit, and the significances are way worse.  
+
+### Interpreting the model
+
 Let's see how good our model performs regarding the accuracy.
 ```{r}
   # Predict the test data. The column survived is hidden during the predicting.
@@ -370,27 +386,9 @@ accuracy <- mean(survived_predict == test$survived)*100
 print(paste("The model accuracy is", round(accuracy,digits = 2), "%"))
 ```
 
-Let's take a look at the significance of regressors in our model.
-```{r}
-summary(model)
-```
-The p-value, which ranges between 0 and 1, represents the significance of each regressor. The higher p-value is, the more insignificant is the concerned regressor. *sex* has the lowest p-value, which means that sex of the passenger associate strongly with the target feature *survived*.
-
-Let's calculate the Odd-Ratios.
-```{r}
-exp(model$coef)
-```
-
-Being a male will decrease the chance of surviving (weitere Intepretation please)
-
-```{r}
-anova(model, test = "Chisq")
-```
-
-### Interpreting the model
 There are still several ways to improve the quality of the data set as well as the performance of our predicted model. 
 
-On the one hand, there is a method called cross validation, which is used to limit problems like overfitting (overfitting: a model which contains too many explanatory variables than necessary). 
+On the one hand, there is a method called k-fold cross validation, which is used to limit problems like overfitting (overfitting: a model which contains too many explanatory variables than necessary). This method partitiones randomly the data set into k equal sized subsets. One of these subsets serves as test data and the rest (k-1) as training data. The cross-validation repeats k-times and returns k different results, which could be averaged to one final result. 
   
 We also notice that the feature *name* actually contains some interesting information, which could be relevant to the predicted model. Many names contain such words like "Master", "Dr.", "Major", etc. Maybe it could somehow affect the result of survival. The code below shows how to split the title from the name. But we did not consider it furthermore because this new feature is extremly unbalanced. The major titles are "Mr." and "Mrs.", which actually determine the sex. Maybe it would be helpful to arrange another titles in some groups to balance this feature somehow. 
 
@@ -405,7 +403,3 @@ nameTitle <- sapply(nameSplit, function(x) x[1])
 describe(nameTitle)
   # source: https://www.math.ucla.edu/~anderson/rw1001/library/base/html/strsplit.html  
 ```  
- 
-
-
-
