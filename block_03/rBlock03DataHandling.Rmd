@@ -1,0 +1,465 @@
+---
+title: "Block 03 - Data Handling"
+author: "Marcelo"
+date: "20 November 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+#rm(list = ls())
+library(dplyr)
+library(nycflights13)
+```
+
+dplyr aims to provide a function for each basic verb of data manipulating:
+
+* filter() (and slice())
+* arrange()
+* select() (and rename())
+* distinct()
+* mutate() (and transmute())
+* summarise()
+* sample_n() and sample_frac()
+
+```{r environment}
+class(flights)
+```
+
+```{r}
+dfFlights <- as.data.frame(flights)
+```
+
+```{r}
+flights[flights$month == 7 &
+          flights$day == 1,  ]
+```
+
+```{r}
+system.time(filter(flights, month == 7, day == 1))
+```
+
+```{r}
+system.time(filter(dfFlights, dep_delay < 0 & arr_delay > 0))
+```
+
+
+```{r}
+#arrange(flights, year, month, day)
+arrange(flights, desc(arr_delay))
+```
+
+all the following outputs are identical
+```{r}
+select(flights, year, month, day) 
+select(flights, year:day)
+select(flights, 1:3)
+```
+
+
+## Excercises: Subset, Filter and Arrange data frames
+
+### 1 and 2
+```{r}
+dataPath <- "./Datasets/Schweiz/"
+filesToLoad <- list.files(path = dataPath, full.names = TRUE)
+filesToLoad
+```
+
+### 3
+```{r}
+dat1 <- read.csv2(file = filesToLoad[1])
+str(dat1, vec.len = 1)
+```
+
+
+```{r}
+dat2 <- read.csv(file = filesToLoad[2])
+```
+
+
+
+```{r}
+dat1 <- read.table(file= filesToLoad[1],
+                   header = TRUE,
+                   sep = ";",
+                   dec = ",",
+                   stringsAsFactors = T)
+head(dat1)
+ 
+```
+
+```{r}
+dat2 <- read.table(file= filesToLoad[2],
+                   header = TRUE,
+                   sep = ",",
+                   dec = ".",
+                   stringsAsFactors = T)
+head(dat2)
+```
+
+
+
+```{r}
+dat3 <- read.table(file= filesToLoad[3],
+                   header = TRUE,
+                   sep = "_",
+                   dec = "-",
+                   stringsAsFactors = T)
+head(dat3)
+```
+
+```{r}
+dat4 <- read.table(file= filesToLoad[4],
+                   header = TRUE,
+                   sep = "\t",
+                   dec = ",",
+                   stringsAsFactors = T)
+head(dat4)
+```
+
+```{r}
+all(identical(dat1, dat2),
+    identical(dat3, dat4),
+    identical(dat1, dat3))
+```
+
+
+```{r}
+datSub1 <- dat1[-(1:3), 1:6]
+datSub2 <- dat1[-(4:10), c(1, 7)]
+```
+
+
+### 9.
+Use the * join functions from the dplyr package to reunite the two subsets to one data frame
+named datJoin. Read the help file for inner join. Which column should be used for joining?
+Your result should look like:
+
+```{r}
+datJoin <- full_join(x = datSub1,
+                      y = datSub2,
+                      by = "Province")
+str(datJoin, vec.len = 1)
+identical(dim(dat1), dim(datJoin))
+identical(dat1, datJoin)
+```
+
+
+
+## Subset, Filter and Arrange data frames
+
+###
+
+
+```{r}
+data(swiss)
+?swiss
+```
+
+### Create a new column swiss$Province in which you store the name of the provinces corresponding to the observations. Delete the rownames afterwards.
+
+```{r}
+swiss <- swiss %>%
+  mutate(Province = rownames(swiss)) %>%
+  select(7, 1:6)
+swiss
+``` 
+
+### Identify the five provinces with the lowest percentage of males involved in agriculture as occupation. 
+
+
+```{r}
+swiss %>%
+  arrange(Agriculture) %>%
+  select(Province, Agriculture) %>%
+  slice(1:5)
+```
+
+
+
+## Find the five provinces with the highest percentage of catholic population.
+```{r}
+swiss %>%
+  arrange(desc(Catholic)) %>%
+  select(Province, Catholic) %>%
+  slice(1:5)
+```
+
+## Data Manipulation
+
+```{r, message=FALSE, warning=FALSE}
+rm(list = ls())
+library(dplyr)
+```
+
+
+
+```{r}
+urlRedWine <-
+"http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv"
+urlWhiteWine <-
+"http://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv"
+readLines(urlRedWine, n = 5)
+```
+
+```{r}
+readLines(urlWhiteWine, n = 5)
+```
+
+```{r}
+redWine <- read.table(file = urlRedWine,
+                      header = TRUE,
+                      sep = ";",
+                      dec = ".")
+
+whiteWine <- read.table(file = urlWhiteWine,
+                      header = TRUE,
+                      sep = ";",
+                      dec = ".")
+```
+
+```{r}
+redWine <- mutate(.data = redWine, color = "red")
+whiteWine <- mutate(.data = whiteWine, color = "white")
+```
+
+```{r}
+wine <- bind_rows(redWine, whiteWine)
+str(wine, vec.len = 2)
+rm(redWine, whiteWine)
+```
+
+```{r}
+# apply condition
+wine <- wine %>%
+  mutate(alcoholClass = ifelse(test = alcohol < 10,
+                               yes = "low",
+                               no = ifelse(test = alcohol < 12,
+                                           yes = "medium",
+                                           no = "high")))
+
+# apply ordered factor
+wine$alcoholClass <- factor(x = wine$alcoholClass,
+                             levels = c("low", "medium", "high"),
+                             ordered = TRUE)
+
+#display aggregated table
+table(wine$alcoholClass, wine$color)
+```
+
+```{r}
+prop.table(table(wine$alcoholClass, wine$color), margin = 2)
+```
+
+### 6. Figure out how the same results can be obtained using dplyr functions:
+
+```{r}
+wine %>%
+  select(color, alcoholClass) %>%
+  count(color, alcoholClass)
+```
+
+
+```{r}
+# not quite right
+wine %>%
+  group_by(color) %>%
+  count(color, alcoholClass) %>% 
+  mutate(ratio = n / sum(n)) %>% 
+  select(color, alcoholClass, ratio) 
+```
+
+
+
+```{r}
+# not quite right
+wine %>%
+  select(color, alcoholClass) %>%
+  group_by(color) %>%  
+  mutate(ratio = count(color, alcoholClass) / sum(count(color, alcoholClass)))
+```
+
+
+
+## 7. Calculate the mean values for alcohol, density and pH for each combination of quality and color using the aggregate function.
+
+```{r}
+wineAgg <- wine %>%
+  select(quality, color, alcohol, density, pH)
+  
+```
+
+
+```{r}
+aggregate(x = wineAgg[,-(1:2)],
+          by = list("quality" = wineAgg$quality,
+                    "color" = wineAgg$color),
+          FUN = mean)
+```
+
+# Block 03.02 - 27.11.17 
+
+```{r}
+rm(list = ls())
+```
+
+
+```{r}
+require(nycflights13)
+require(dplyr)
+```
+
+Rename at select
+```{r}
+select(flights, depTime = dep_time)
+```
+
+rename (returns full DataFrame)
+```{r}
+rename(flights, depTime = dep_time)
+```
+
+
+analogous to unique, but for whole dataFrame
+```{r}
+distinct(flights, tailnum) 
+```
+
+
+list all flights connections (unique origin AND destination)
+```{r}
+distinct(select(flights, origin, dest))
+```
+
+mutate 
+```{r}
+mutate(flights,
+       gain = arr_delay - dep_delay,
+       speed = distance / air_time * 60) %>%
+  select(gain, speed, distance, air_time, arr_delay, dep_delay)
+```
+
+
+```{r}
+transmute(flights, 
+          gain = arr_delay - dep_delay,
+          speed = distance / air_time * 60)
+
+```
+
+```{r}
+summarise(flights, 
+          delay = mean(arr_delay - dep_delay, na.rm = TRUE))
+```
+
+```{r}
+sample_n(flights, 20)
+sample_frac(flights, 0.001)
+```
+
+## Grouped operations 
+
+
+At the most basic level, you can only alter a data frame in five useful ways:
+
+1. you can reorder the rows (arrange()),
+2. pick observations (filter() ) and
+3. variables of interest (select()),
+4. add new variables that are functions of existing variables (mutate()) or
+5. collapse many values to a summary (summarise()).
+The remainder of the language comes from applying the five functions to different types
+of data, like to grouped data, as described next.
+
+```{r}
+by_tailnum <- group_by(flights, tailnum)
+
+delay <- summarise(by_tailnum, 
+                   count = n(),
+                   dist = mean(distance, na.rm = T),
+                   delay = mean(arr_delay, na.rm = T))
+
+delay <- filter(delay, count > 20, dist < 2000)
+                    
+                   
+delay                   
+```
+
+```{r}
+destinations <- group_by(flights, dest)
+summarise(destinations,
+          planes = n_distinct(tailnum),
+          flights = n())
+
+```
+
+```{r}
+a1 <- group_by(flights, year, month, day)
+a2 <- select(a1, arr_delay, dep_delay)
+a3 <- summarise(a2, 
+                "arr" = mean(arr_delay, na.rm = T),
+                "dep" = mean(dep_delay, na.rm = T)
+                )
+a4 <- filter(a3, arr > 30 | dep > 30)
+a4
+```
+
+```{r}
+flights %>% 
+  group_by(year, month, day) %>% 
+  select(arr_delay, dep_delay)  %>%
+  summarise(arr = mean(arr_delay, na.rm = T),
+            dep = mean(dep_delay, na.rm = T)) %>%
+  filter(arr > 30 | dep > 30)
+```
+
+## String Manipulation 
+
+```{r}
+x <- 's"ome' 
+paste(x, "string", sep = "_")
+```
+```{r}
+newLine <- "new\nline"
+cat(newLine)
+moreNewLines <- paste(rep("\nnew", 3), "line", sep = "\n")
+cat(moreNewLines)
+```
+
+grep
+
+```{r}
+x <- "some"
+y <- paste(x, "String")
+z <- c("some", "More")
+a <- paste(z, "String", sep = "_")
+
+grep("String", a)
+# grep logical
+grepl(pattern = "String", a)
+grepl("Something", a)
+
+sub("String", "Something", a)
+
+```
+
+```{r}
+dat <- as.data.frame(matrix(1:100, nrow = 10))
+names(dat)[1:3] <- paste("x", 1:5, sep = "")
+str(dat)
+
+dat[ , grep("x", names(dat))]
+```
+
+```{r}
+names(dat)[1:2] <- c("v1x", "x_Something")
+dat[1:3, grep("x", names(dat))] # that's not what we want
+```
+
+```{r}
+dat[1:3, grep("^[xX][2-9]", names(dat))]
+```
+

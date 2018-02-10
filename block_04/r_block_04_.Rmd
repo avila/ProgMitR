@@ -1,0 +1,126 @@
+---
+title: "block4"
+author: "Marcelo Avila"
+date: "January 8, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Control Structures 
+
+Control structures in R allow you to control the flow of execution of the program,
+depending on runtime conditions. Common structures are
+  if, else: testing a condition
+  for: execute a loop a fixed number of times
+  while: execute a loop while a condition is true
+  repeat: execute an infinite loop
+  break: break the execution of a loop
+  next: skip an interation of a loop
+
+```{r}
+x <- c("a", "b", "c", "d")
+
+for (i in seq_along(x)) {
+  print(x[i])
+}
+```
+```{r}
+for(letter in x) {
+  print(letter)
+}
+```
+### Nesting
+```{r}
+x <- matrix(data = 1:6, ncol = 2, byrow = TRUE)
+
+for(i in seq_len(nrow(x))) {
+  for(j in seq_len(ncol(x))) {
+    print(x[i, j])
+  }
+}
+```
+
+### AVOID
+```{r}
+x <- 1
+for(i in 2:10) {
+  x<- c(x, i)
+}
+```
+### better
+```{r}
+x <- vector(length = 10)
+for(i in 1:10) {
+  x[i] <- i
+}
+x
+```
+
+## while
+```{r}
+number <- 0
+while(number < 10) {
+  print(number)
+  number <- number + 1
+}
+number <- 0
+while(number < 10) {
+  number <- number + 1
+  print(number)
+
+}
+```
+
+```{r}
+z <- 5
+while(z >= 3 && z <=7) {
+  print(z)
+  coin <- rbinom(n = 1, size = 1, prob = 0.5)
+  if(coin == 1) {
+    z <- z + 1 
+  } else {
+    z <- z - 1
+  }
+}
+```
+
+```{r eval=FALSE}
+
+x0 <- 1
+tol <- 1e-8
+
+repeat {
+  x1 <- computeEstimate(x0)
+  if(abs(x1 - x0) < tol) {
+    break
+  } else {
+    x0 <- x1
+  }
+}
+```
+
+```{r}
+for(i in 1:5) {
+  if(i <= 2) {
+    # hier soll wirklich nichts passieren
+  } else {
+    print(i)
+  }
+}
+
+for(i in 1:5) {
+  if(i <= 2) {
+    next
+  } else {
+    print(i)
+  }
+}
+```
+
+```{r}
+
+```
+

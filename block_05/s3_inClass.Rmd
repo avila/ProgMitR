@@ -1,0 +1,260 @@
+---
+title: "S3 Prog mit R - Class"
+author: "Marcelo Avila"
+date: "January 29, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## motivation 
+
+Let’s assume we want to define a mean for the character type in R.
+As mean we simply define the mean length of each element in a
+vector of type character. The length of an element can be defined as
+the number of characters.
+
+```{r}
+characterVector <- c("some", "more", "text", "and", "different", "nchar")
+meanCharacter <- function(x) mean(nchar(x))
+meanCharacter(characterVector)
+```
+
+```{r}
+mean <- function(x) {
+  mean(nchar(x))
+} 
+# name conflict
+
+# base::mean geht kapput 
+mean <- function(x) {
+  base::mean(nchar(x))
+}
+mean(characterVector)
+mean(1:10)
+
+# create conditions
+mean <- function(x) {
+  if (is.character(x)) base::mean(nchar(x))
+  else base::mean(x)
+}
+
+mean(characterVector)
+mean(1:10)
+```
+
+There is one obstacle with the definition of meanCharacter, the name.
+With every function we define we have to memorize one more function
+name and also we have to find new useful names (which is not easy!).
+
+How is a potential user (you in 2 weeks) ever going to understand and
+know about all the functions you defined? Not at all.
+
+If the name is a problem let’s define a new mean function.
+One thing to keep in mind, however, is that we should preserve the
+behaviour of the original mean function.
+
+Every time we want to define a mean function for a new data type we
+have to add more if clauses to the definition. In the long run this
+strategy is going to be a mess.
+
+Also we can not extend functionality, we have to change it. Extending
+is good, changing is bad.
+
+
+# The S3 class method: Basic Idea
+
+The basic idea of the S3 class system is that it should be possible to
+extend the functionality of a generic vocabulary without adding new
+words (function names).
+
+This is a convenience. You can throw any statistical model and data
+type into the summary function. And somehow (allmost) for all data
+types (linear models, data frames, etc.) summary knows what to do.
+
+Even more, summary knows about data types from different packages,
+although the original author had no way of anticipating these types.
+To understand this we need to answer the three following questions:
+
+What is a S3 class?
+
+What is a generic function?
+
+What is a method?
+
+
+## What is a S3 class?
+
+S3 classes serve a simple purpose, to give different or new data types
+a name.
+
+This is done by adding an attribute to the data with the name of the
+class.
+
+
+```{r}
+dat <- list(c(1, 2), c(2, 3), c(2, 4))
+class(dat) <- "rational"
+str(dat)
+```
+
+Typically you do not assign the class interactively but you return data
+with a class attribute from a constructor function (e.g. numeric, list,
+lm).
+
+
+
+```{r}
+rational <- function(num, denom) {
+  rat <- mapply(c, num, denom, SIMPLIFY = FALSE)
+  class(rat) <- "rational"
+  rat
+}
+```
+
+```{r}
+str(rational(c(1, 2, 2), c(2, 3, 4)))
+```
+
+
+rational is a constructor function for instances of class rational.
+It is named constructor because it knows how to construct an object of
+class rational.
+
+There is no formal definition of the class, you simply say a list is of
+class X.
+
+In most scenarios the list type is used as the basic data structure to
+compose new data (e.g. data.frame and lm).
+
+So what is the great benefit of defining new classes? An example:
+Printing an object of class rational to the console results in verbose
+information. Now we can fix this:
+
+```{r}
+print.rational <- function(x, ...) cat(sapply(x, paste, collapse = "/"))
+rational(c(1, 2, 2), c(2, 3, 4))
+```
+
+
+## Generic functions and methods
+
+A generic functions is a function which only purpose is to find the
+appropriate method given the class of its first argument.
+
+The overall purpose is, that you have a function name, say mean, and
+this function somehow figures out how the mean is defined for a given
+data type.
+
+The function print and mean are generic functions. print will find the
+correct print method to print things to the console. And mean searches
+for the correct mean method for a given data type.
+Methods are defined by a naming convention: <generic>.<class>
+
+```{r}
+print.rational <- function(x, ...) {
+  cat(sapply(x, paste, collapse = "/"))
+}
+
+mean.rational <- function(x, ...) {
+  mean(sapply(x, function(el) el[1] / el[2]))
+}
+```
+
+```{r}
+rat <- rational(num, denom)
+
+## was macht mean(sapply... )
+
+
+out <- list()
+for (i in 1:length(rat)) {
+  out[[i]] <- rat[[i]][1] / rat[[i]][2]
+}
+out
+```
+
+
+```{r}
+num <- c(1,2,2)
+denom <- c(2,3,4)
+```
+
+```{r}
+rational(num, denom)
+mean(rational(num, denom))
+```
+
+We say print.rational is the print method for objects of class
+rational. There is a print method for most of the data types in R which
+define how output is printed to the console.
+
+
+
+
+
+```{r}
+# back to character example
+mean(characterVector)
+
+mean.character <- function(x, ...) {
+  base::mean(nchar(x))
+}
+
+mean(characterVector)
+```
+
+the print function finds 
+
+# ddtt 
+
+## S3
+
+- class
+- method
+- genereic
+- object
+
+class
+
+- "bauplan"
+     - constructor: erzeugt eine Instanz der klasse
+     
+```{r}
+myClass <- function(x, y) {
+  out <- list(x, y)
+  class(out) <- "myClass"
+  out
+}
+
+
+myClass(1, 2)
+```
+
+## Generic
+
+```{r}
+print <- function(x, ...) {
+  UseMethod("print")
+}
+```
+
+
+## method for "myClass"
+```{r}
+print.myClass <- function(x , ...) ...
+```
+
+```{r}
+print.default <- function(x, ...) {
+  
+}
+```
+
+```{r}
+# ?.S3methods
+```
+

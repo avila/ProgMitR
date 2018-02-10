@@ -1,0 +1,184 @@
+---
+title: "Programmieren mit R - Excercises"
+output: html_notebook
+---
+# Ex1-CompStat:R
+https://lms.fu-berlin.de/bbcswebdav/pid-3382855-dt-content-rid-5536805_2/courses/WIWISS_V_104063b_17W/Ex1.html
+
+
+## Misc
+
+1. Define the following vectors in R:
+        a = sequence from 0 to 8
+        b = (1, 1, 1, 2, 2, 2, 3, 3, 3)
+        c = (1, 2, 2, 3, 3, 3, 4, 4, 4)
+        d = (1, 2, 2, 3, 3, 3, 4, 4, 4)
+        
+```{r}
+a = 0:8
+b = c(1, 2, 2, 3, 3, 3, 4, 4, 4)
+c = c(1, 2, 2, 3, 3, 3, 4, 4, 4)
+d = c(1, 2, 2, 3, 3, 3, 4, 4, 4)
+```
+
+2. what are the dimensions and lengths of a, b, c and d?
+```{r}
+length(a)
+## vector 1 x 9
+```
+
+3. Create a named vector namedNumbers containing the elements (1, 2, 3, 4) with element names (alpha, beta, gamma and delta)!
+
+```{r}
+namedNumbers = 1:4
+names(namedNumbers) = c("alpha", "beta", "gamma", "delta")
+namedNumbers
+```
+
+
+4. a, b, c and d are defined as before. Check the R Language Definiton 3.1.4, if you are not familiar with the applied operators (e.g. &, |, ==, etc.). Think first, check your results with R. What is the result of:
+
+
+
+```{r}
+1 == 2              # false
+1 != 2              # true
+1 == 2 & 2 == 2     # false
+1 == 2 | 2 == 2     # true
+```
+```{r} 
+"1" == 1        # false (! doch TRUE)
+TRUE == 1       # true
+FALSE == 0      # true
+TRUE != FALSE   # true
+```
+
+```{r}      
+TRUE & TRUE             # true 
+FALSE | TRUE            # true
+(TRUE | FALSE) & TRUE   # true 
+(TRUE | FALSE) & FALSE  # true (DOCH false!)
+```
+
+```{r}
+!(TRUE | FALSE)             # false
+is.logical(c(T, F, T, F))   # true
+is.logical(a)               # false
+is.numeric(b)               # true
+```
+
+```{r}
+is.numeric(A)   # ERROR 
+```
+
+```{r}
+b == 2 # logical vector with TRUE where b = 2 and false otherwise
+```
+
+```{r}
+any(b == 2)     # True
+all(b == 2)     # false 
+```
+
+5. Extract only the first element of namedNumbers, use the indexing-function [. First use the position directly, second use the name and third use a logical vector!
+```{r}
+# position
+namedNumbers[1]
+# name
+namedNumbers["alpha"]
+#logical
+namedNumbers[c(TRUE, FALSE, FALSE, FALSE)]
+```
+
+6. Extract only the elements of a, b, c and d which are equal to 1, 2, 3 and 4 respectively!
+```{r}
+longlist <- c(a[a > 0 & a < 5],
+              b[b > 0 & b < 5],
+              c[c > 0 & c < 5],
+              d[d > 0 & d < 5])
+longlist
+```
+
+7. What is the result of (think first):
+
+```{r}
+c("c", "1") > 1 # TRUE FALSE
+```
+
+```{r}
+c("c", "1") > "b" # TRUE FALSE
+```
+
+```{r}
+c("c", "1") > b # ERROR (longer object length is not a multiple of shorter object length)
+```
+
+```{r}
+c("c", "1") > b[-1] # T, F, T, F, T, F, T, F, 
+```
+```{r}
+c("c", "1") + c(TRUE, FALSE)
+# ERROR (non-numeric argument to binary operator)
+```
+
+8. Calculate the mean, standard deviation, min, max and median for a, b, c and d!
+
+```{r}
+print("a")
+mean(a); sd(a); max(a); median(a)
+print("b")
+mean(b); sd(b); max(b); median(b)
+print("c")
+mean(c); sd(c); max(c); median(c)
+print("d")
+mean(d); sd(d); max(d); median(d)
+
+```
+
+9. Which of the following names can be used for naming objects in R: A, A1, 1A, A=1, A&1,
+.A, A.1, A_1, A 1
+
+```{r}
+# all of them (using quotation mark)
+```
+
+10. What are the general rules for naming objects in R? See the R-Language Definition 
+for details.
+
+    File Names
+          
+            File names should end in .R and, of course, be
+            meaningful.
+            
+    GOOD: predict_ad_revenue.R
+            
+    BAD: foo.R
+          
+
+          Identifiers
+          
+            Don't use underscores ( _ ) or hyphens
+            ( - ) in identifiers.
+            Identifiers should be named according to the following conventions.
+            The preferred form for variable names is all lower case
+            letters and words separated with dots
+            (variable.name), but variableName
+            is also accepted;
+            function names have initial capital letters and no dots
+            (FunctionName);
+            constants are named like functions but with an initial
+            k.
+            #https://google.github.io/styleguide/Rguide.xml#assignment
+          
+    
+
+
+11. What is the value of x * y?
+```{r}
+y <- c(1, 2)
+x <- y
+y <- 3
+x * y      # [3, 6]
+```
+
+## Factors

@@ -40,3 +40,4 @@ test_2.txt
 *.txx
 
 # this line was added from avila
+.Rproj.user

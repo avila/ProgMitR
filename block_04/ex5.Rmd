@@ -1,0 +1,415 @@
+---
+title: "Exercise 5"
+output: html_notebook
+---
+
+```{r}
+library(stringr)
+library(dplyr)
+```
+
+Define a function, which given a numeric, integer or character vector, , identifying one of the CSV files, opens it and prints a of the data to the console if requested. Note that the name of each file begins with ‘part’ followed by the which is always represented by a three digit number. Do not use to write this function. The return value of the function is a data frame. Use the following scheme:
+
+```{r}
+getData <- function(directory, id, summarize = FALSE, verbose=FALSE) {
+  # 'id' is a vector of length 1 indicating a dataset.
+  # The user should be able to specify 'id' either as an integer, a
+  # character, or a numeric value.
+  
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'summarize' is a logical indicating if a summary of
+  # the data should be printed to the console.
+  fileName <- paste0("part", sprintf("%03d",as.numeric(id)), ".csv")
+  filePath <- file.path(directory, fileName)
+  if (verbose == TRUE) {
+    print(paste("Reading:", gsub("//", "/",filePath)))
+    }
+  data <- read.csv2(file = filePath)
+  if (summarize == TRUE) {
+    print(summary(data))
+  }
+  data
+}
+```
+
+```{r}
+dat <- getData("data/Data Collection/", 
+               id = 12, 
+               summarize = TRUE)
+```
+
+# 2
+2.Define a function which given a vector of id’s, will load the appropriate files and returns a data frame containing all loaded datasets. Create an integer variable in the return data which identifies the original dataset. Use the following scheme:
+
+```{r}
+appendData <- function(directory, id = 1:270) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  # create list to hold data frames with length equal to number of files to load
+  listOfDataFrames <- vector("list", length(id))
+  
+  # loop in ids 
+  for (fileId in id) {
+    data <- getData(directory = directory, id = fileId, summarize = FALSE)
+    data$id <- fileId
+    listOfDataFrames[[fileId]] <- data
+  }
+  # Merge list of Data Frames into dfMerged
+  print("Merging Data Frames")
+  dfMerged <- do.call("rbind", listOfDataFrames)
+}  
+  
+```
+```{r}
+dat <- appendData("data/Data Collection/", id = 1:3)
+dim(dat)
+```
+
+
+## other way
+
+```{r}
+appendData2 <- function(directory, id = 1:270) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  # create list to hold data frames with length equal to number of files to load
+  idChar <- formatC(id, width = 3, flag = 0)
+  fileNames <- paste0(directory,"part",idChar,".csv")
+  resList <- lapply(fileNames, read.csv2)
+  do.call(rbind, resList)
+}
+```
+
+```{r}
+dat <- appendData2("data/Data Collection/", id = 1:5)
+dim(dat)
+```
+
+```{r}
+myRead.csv2 <- function(file, id) {
+  res <- read.csv2(file)
+  res[["id"]] <- id
+  return(res)
+}
+
+appendData3 <- function(directory, id = 1:270) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  # create list to hold data frames with length equal to number of files to load
+  idChar <- formatC(id, width = 3, flag = 0)
+  fileNames <- paste0(directory,"part",idChar,".csv")
+  resList <- mapply(FUN = myRead.csv2,
+                    fileNames, id, 
+                    SIMPLIFY = FALSE)
+  resDF <- do.call(rbind, resList)
+  rownames(resDF)
+  return(resDF)
+}
+```
+
+```{r}
+dat <- appendData3("data/Data Collection/", id = 1:5)
+dat
+```
+
+
+# 3 
+
+3. Define a function which given a vector of id’s will load the corresponding datasets by using
+the function appendData from the previous exercise. It will then calculate the correlation
+between the variables carat and price and between volume and price, as well as the mean 
+of carat, price and volume for each id! Volume can be approximated by x · y · z. Use the
+following scheme:
+
+```{r}
+calculateStatistics <- function(directory, id = 1:270) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded.
+  
+  # Return a data frame with the correlations and means.
+  
+  appendData("data/Data Collection/", id = id) %>% 
+    mutate(volume = x * y * z) %>% 
+    group_by(id) %>% 
+    summarise(corrCP = cor(carat, price),
+              corrVP = cor(volume, price),
+              meancarat = mean(carat),
+              meanVolume = mean(volume),
+              meanPrice = mean(price)
+              )
+}
+```
+
+```{r}
+dat <- calculateStatistics("data/Data Collection/")
+dat[1:3, ]
+```
+
+4. Rewrite the function appendData such that if the argument id = NULL the function will
+try to open and append any file matching the pattern partXXX.csv in the directory given by
+directory. The default value of id should be NULL for thi
+
+```{r}
+appendDataExtra <- function(directory, id = NULL) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  if (is.null(id)) {
+    listOfFiles <- list.files("data/Data Collection")
+    pattern <- "part[0-9][0-9][0-9].csv"
+    
+    # matches "partXXX.csv" and extract ids 
+    id <- str_extract(str_subset(listOfFiles, pattern), "[0-9]+")
+  } 
+  
+  # get number of files to be imported
+  numberOfFiles <- length(id)
+  
+  # create list to hold data frames with length equal to number of files
+  listOfDataFrames <- vector("list", numberOfFiles)
+  
+  # modify following loop for lapply
+  fileNames <- paste0(directory, "part", as.character(id), ".csv")
+
+  # loop in ids 
+  for (fileId in id) {
+    data <- getData(directory = directory, id = fileId, summarize = FALSE)
+    data$id <- fileId
+    
+    # if only 1 file, return data, otherwise append data to a list
+    if (numberOfFiles == 1) {
+      return(data)
+    }
+    listOfDataFrames[[fileId]] <- data
+  }
+  # Merge list of Data Frames into dfMerged
+  print("Merging Data Frames")
+  dfMerged <- do.call("rbind", listOfDataFrames)
+}
+```
+
+
+#### other way
+```{r}
+appendDataExtra2 <- function(directory, id = NULL) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  if (is.null(id)) {
+    listOfFiles <- list.files("data/Data Collection")
+    pattern <- "part[0-9][0-9][0-9].csv"
+    
+    # matches "partXXX.csv" and extract ids 
+    id <- str_extract(str_subset(listOfFiles, pattern), "[0-9]+")
+  } 
+  
+  # get number of files to be imported
+  numberOfFiles <- length(id)
+  
+  # create list to hold data frames with length equal to number of files
+  listOfDataFrames <- vector("list", numberOfFiles)
+  
+  # modify following loop for lapply
+  fileNames <- paste0(directory, "part", as.character(id), ".csv")
+  
+  # define function for mapply
+  myRead.csv2 <- function(file, id) {
+    res <- read.csv2(file)
+    res[["id"]] <- id
+    return(res)
+  }
+  
+  resList <- mapply(FUN = myRead.csv2,
+                    fileNames, id, 
+                    SIMPLIFY = FALSE)
+  resDF <- do.call(rbind, resList)
+  rownames(resDF) <- NULL
+  return(resDF)
+}
+dat <- appendDataExtra2("data/Data Collection/")
+dat
+```
+
+
+
+```{r}
+dat <- appendDataExtra("data/Data Collection/")
+range(dat$id)
+```
+
+
+
+```{r}
+appendDataMoreExtra <- function(directory, id = 1:270, verbose=TRUE) {
+  # 'directory' is a character vector of length 1 indicating
+  # the location of the CSV files.
+  
+  # 'id' is an integer, numeric or character vector indicating 
+  # the datasets to be loaded. The ids don't have to be a sequence.
+  
+  # Return a data frame containing all loaded data sets with
+  # an additional integer variable "id". 
+  
+  # get number of files in directory
+  listOfFiles <- list.files("data/Data Collection")
+  listOfFiles <- str_subset(string = list.files("data/Data Collection"),
+                            pattern = "\\.csv$")
+  
+  if (is.null(id)) {
+    pattern <- "part[0-9][0-9][0-9].csv"
+    # matches "partXXX.csv" and extract ids 
+    id <- str_extract(str_subset(listOfFiles, pattern), "[0-9]+")
+  } 
+  # get number of files to be imported
+  numberOfFiles <- length(id)
+  
+  if (verbose == TRUE) {
+    print(paste("Reading", numberOfFiles, "of", length(listOfFiles) , "*.csv files from", directory))
+  }
+  
+  # create list to hold data frames with length equal to number of files
+  listOfDataFrames <- vector("list", numberOfFiles)
+  
+  # loop in ids 
+  for (fileId in id) {
+    data <- getData(directory = directory, id = fileId, summarize = FALSE)
+    data$id <- fileId
+    
+    # if only 1 file, return data, otherwise append data to a list
+    if (numberOfFiles == 1) {
+      return(data)
+    }
+    listOfDataFrames[[fileId]] <- data
+  }
+  # Merge list of Data Frames into dfMerged
+  if (verbose == TRUE) {
+    print("Merging Data Frames")
+  } 
+  dfMerged <- do.call("rbind", listOfDataFrames)
+}
+
+dat <- appendDataMoreExtra("data/Data Collection/", id = 1:13)
+```
+
+## The √N law
+
+```{r}
+meanVarSdSe <- function(x) {
+  ### your code
+  result <- c(mean <- mean(x),
+              var <- var(x),
+              sd <- sd(x),
+              se <- sd / sqrt(length(x)))
+  return(result)
+}
+meanVarSdSe(1:100)
+```
+
+Now run the code. Explain the result. Extend the function definition of meanVarSdSe with the
+argument ..., as is illustrated as follows:
+```{r}
+meanVarSdSe(c(NA, 1:00))
+```
+
+```{r}
+meanVarSdSe <- function(x, ...) {
+  ### your code
+  result <- c(N = as.integer(sum(!is.na(x))),
+              mean = mean(x, ...),
+              var = var(x, ...),
+              sd = sd(x, ...),
+              se = sd(x, ...) / sqrt(sum(!is.na(x))))
+  return(result)
+}
+meanVarSdSe(c(NA, 1:100), na.rm=TRUE)
+```
+
+
+### Convergence and Control Structures
+
+The N Law: the precision of the sample average improves with the square root of the sample size
+N . Simulate 10 6 Poisson distributed random numbers with expectation value λ = 100 via
+
+```{r}
+set.seed(1) # why?
+rPois <- rpois(n = 1e6, lambda = 100)
+```
+
+
+```{r}
+# init 
+n <- 2
+se <- 1
+
+result <- matrix(nrow = 0, ncol = 5)
+while (se > 0.05) {
+
+  # this causes errror when n > length(rPois)
+  x <- rPois[1:n]
+  
+  # result 
+  row <- meanVarSdSe(x)
+  result <- rbind(result, row)
+
+  # update
+  n <- n * 2
+  se <- row["se"]
+  if (n > 3e+7) {
+    break
+  }
+}
+
+result
+```
+
+```{r}
+x <- result[, 3]
+
+plot(x, type = "l")
+```
+
+
+
+
+
+## useful links
+https://stackoverflow.com/questions/2969315/rhow-to-get-grep-to-return-the-match-rather-than-the-whole-string
+https://cran.r-project.org/web/packages/stringr/vignettes/stringr.html

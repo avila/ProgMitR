@@ -1,0 +1,261 @@
+---
+title: "Block 04 Apply Family"
+author: "Marcelo Avila"
+date: "January 8, 2018"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Apply Family
+
+Writing for, while loops is useful when programming but not particularly easy when
+working interactively on the command line. There are some functions which implement
+looping to make life easier.
+
+lapply
+~ Loop over a list and evaluate a function on each element
+sapply
+~ Same as lapply but tries to simplify the result
+mapply
+~ Multivariate version of lapply
+An auxiliary function split is also useful, particularly in conjunction with lapply.
+
+### lapply()
+
+```{r}
+x <- list("a" = 1:5, 
+          "b" = rnorm(10))
+
+lapply(x, mean)
+sap <-sapply(x, mean)
+```
+
+```{r}
+x <- list(a = c(1:4, NA),
+          b = rnorm(10),
+          c = rnorm(20, 1),
+          d = rnorm(100, 5)
+)
+
+lapply(x, mean, na.rm = TRUE)
+```
+
+
+```{r}
+x 
+```
+
+```{r}
+x <- 1:4
+lapply(x, runif, min=0, max=100)
+# same as runif( 1.. 1:2.. 1:3.. 1:4.., min=0, max=100)
+
+# not like the following
+for (i in x) {
+  print(i)
+}
+```
+
+
+```{r}
+x <- 1:4
+lapply(x, runif, min=0, n = 5)
+```
+
+```{r}
+erg <- lapply(x, runif, min = 0, n = 1000)
+lapply(erg, max)
+```
+
+```{r}
+x <- list(a = matrix(data = 1:4,
+                     nrow = 2,
+                     byrow = F),
+          b = matrix(data = 1:6,
+                     nrow = 3,
+                     byrow = TRUE))
+x
+```
+```{r}
+mean(x)
+```
+
+
+```{r}
+lapply(x, function(mat) mat[ ,1])
+```
+
+### sapply()
+
+
+```{r}
+lapply(x, function(mat) {
+  erg <-summary(mat[ ,2])
+  return(erg)
+})
+```
+
+sapply will try to simplify the result of lapply if possible.
+
+- If the result is a list where every element is length 1, then a vector is returned.
+- If the result is a list where every element is a vector of the same length (> 1),
+  a matrix is returned.
+- I If it can’t figure things out, a list is returned.
+- I Check the manual for the `sapply` argument `simplify`.
+
+```{r}
+sapply(x, function(mat) {
+  erg <-summary(mat[ ,2])
+  return(erg)
+})
+```
+
+#### split()
+
+split takes a vector or other objects and splits it into groups determined by a factor or
+list of factors.
+
+```{r}
+str(split)
+```
+
+x 
+~ is usually a data frame
+f
+~ is a factor (or coerced to one) or a list of factors
+drop
+~ indicates if empty factor levels should be dropped
+...
+~ further potential arguments passed to methods.
+
+
+```{r}
+spl <- split(x <- airquality[, c("Ozone",
+                                "Solar.R",
+                                "Wind")],
+             f <- airquality$Month)
+```
+
+```{r}
+sapply(spl, colMeans)
+```
+
+```{r}
+sapply(spl, colMeans, na.rm = TRUE)
+```
+
+```{r}
+dataList <- lapply(split(x, f), quantile, na.rm=TRUE) #Split-Apply
+do.call(cbind, dataList) #Combine the result
+```
+```{r}
+sapply(split(x, f), quantile, na.rm=TRUE) #Split-Apply -> sapply ?
+```
+
+
+
+```{r}
+testdf <- data.frame(x = rnorm(10),
+                     fakt = factor(rep(1:2, 5)))
+
+testdf
+```
+
+```{r}
+```
+
+
+
+
+
+
+
+
+
+
+
+### mapply()
+
+```{r}
+names <- c("Adam Riese", "Albert Einstein", "Oliver Kahn")
+
+namesList <- strsplit(names, split = " ")
+namesList <- lapply(namesList,
+                    function(x) data.frame(
+                      firstName = x[[1]],
+                      lastName = x[[2]]
+                      )
+                    )
+
+do.call(rbind, namesList)
+```
+
+```{r}
+lHard <- list(rep(1, 4), rep(2, 3), rep(3, 2), rep(4, 1))
+lSmart <- mapply(rep, 1:4, 4:1)
+identical(lHard, lSmart)
+```
+
+```{r}
+noise <- function(n, mean, sd) {
+  rnorm(n, mean, sd)
+}
+
+noise(5, 1, 2)
+noise(1:4, 1:4*10, 2)
+```
+
+```{r}
+set.seed(1)
+mapply(noise, 1:4, 1:4 * 10, 2)
+
+set.seed(1)
+list(noise(1, 10, 2), noise(2, 20, 2), noise(3, 30, 2), noise(4, 40, 2))
+```
+```{r}
+noise <- function(n, mean, sd) {
+  mapply(rnorm, n, mean, sd)
+}
+
+set.seed(1)
+noise(1:4, 1:4 * 10, 2:3)
+```
+
+### apply 
+
+```{r}
+mat <- matrix(data = rnorm(1000),
+              nrow = 200)
+
+dim(mat)
+rowSums(mat)
+
+test <- apply(mat, MARGIN = 1, FUN = sum) 
+
+length(test)
+
+apply(mat, MARGIN = 2, FUN = sum)
+apply(mat, MARGIN = 2, FUN = mean)
+
+ar <- array(data = rnorm(4000), dim = c(200, 5, 4))
+
+apply(ar, MARGIN = c(1, 2), FUN = mean)
+dim(apply(ar, MARGIN = c(1, 2), FUN = mean))
+
+apply(ar, MARGIN = 3, FUN = mean)
+
+
+
+```
+
+### tapply() Table Apply 
+
+and by()
+
+
+
+
+
